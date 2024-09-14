@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-6">
+    <!-- Welcome Section -->
+    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h3 class="text-2xl font-semibold text-pm-blue mb-4">Welcome, {{ user.first_name }} {{ user.last_name }}</h3>
+        {% if bank_account %}
+            <p class="text-pm-blue"><strong>Account Balance:</strong> ₹{{ bank_account.balance }}</p>
+        {% else %}
+            <p class="text-pm-blue">No bank account details available.</p>
+        {% endif %}
+    </div>
+
+    <!-- KYC Update Form Section -->
+    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h4 class="text-xl font-semibold text-pm-blue mb-4">KYC Update</h4>
+        <form method="POST" action="{{ url_for('update_kyc') }}">
+            <div class="mb-4">
+                <label for="kyc_status" class="block text-sm font-medium text-pm-blue">KYC Status</label>
+                <input type="text" id="kyc_status" name="kyc_status" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm" value="{{ user.kyc_status }}" required>
+            </div>
+            <div class="mb-4">
+                <label for="id_number" class="block text-sm font-medium text-pm-blue">ID Number</label>
+                <input type="text" id="id_number" name="id_number" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm" value="{{ user.id_number }}" required>
+            </div>
+            <div class="mb-6">
+                <label for="additional_info" class="block text-sm font-medium text-pm-blue">Additional Info</label>
+                <input type="text" id="additional_info" name="additional_info" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm" value="{{ user.additional_info }}" required>
+            </div>
+            <button type="submit" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md shadow-md hover:bg-pm-orange focus:outline-none focus:ring-2 focus:ring-pm-yellow focus:ring-offset-2 transition duration-200">Submit to Claim 10,000 Rs</button>
+        </form>
+    </div>
+
+    <!-- Account Overview Section -->
+    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h4 class="text-xl font-semibold text-pm-blue mb-4">Account Overview</h4>
+        {% if last_transaction %}
+            <h5 class="text-lg font-semibold text-pm-blue mb-2">Last Transaction</h5>
+            <p><strong>Date:</strong> {{ last_transaction.date }}</p>
+            <p><strong>Amount:</strong> ₹{{ last_transaction.amount }}</p>
+            <p><strong>Description:</strong> {{ last_transaction.description }}</p>
+        {% else %}
+            <p>No recent transactions available.</p>
+        {% endif %}
+    </div>
+
+    <!-- Bank Details Section -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h4 class="text-xl font-semibold text-pm-blue mb-4">Bank Details</h4>
+        {% if bank_account %}
+            <p><strong>Bank Name:</strong> {{ bank_account.bank_name }}</p>
+            <p><strong>Account Number:</strong> {{ bank_account.account_number }}</p>
+            <p><strong>IFSC Code:</strong> {{ bank_account.ifsc_code }}</p>
+        {% else %}
+            <p>No bank account details available. <a href="{{ url_for('bank_details') }}" class="text-pm-yellow hover:underline">Add Bank Details</a></p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

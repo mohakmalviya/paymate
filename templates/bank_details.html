@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex flex-col h-full">
+    <!-- Header Section -->
+    <header class="bg-pm-blue text-white p-4">
+        <h1 class="text-2xl font-bold">Bank Details</h1>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6">
+        <div class="bg-white p-8 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-6">Account Overview</h2>
+
+            <!-- Username and Bank Account Details -->
+            <div class="mb-6">
+                <!-- Username Section -->
+                <div class="p-4 bg-white rounded-lg shadow-md mb-4">
+                    <h3 class="text-lg font-semibold mb-2">Username</h3>
+                    <p class="text-lg">{{ user.username }}</p>
+                    <button id="edit-username" class="mt-2 bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Edit</button>
+                </div>
+
+                <!-- Bank Account Details Section -->
+                <div class="p-4 bg-white rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold mb-2">Bank Account Details</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-700">Account Number:</p>
+                            <p class="text-lg" id="account-number">{{ bank.account_number }}</p>
+                            <button id="edit-account-number" class="mt-2 bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Edit</button>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-700">Bank Name:</p>
+                            <p class="text-lg" id="bank-name">{{ bank.bank_name }}</p>
+                            <button id="edit-bank-name" class="mt-2 bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Edit</button>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-700">IFSC Code:</p>
+                            <p class="text-lg" id="ifsc-code">{{ bank.ifsc_code }}</p>
+                            <button id="edit-ifsc-code" class="mt-2 bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Edit</button>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-700">Balance:</p>
+                            <p class="text-lg" id="balance">₹{{ bank.balance if bank.balance else '0.00' }}</p>
+                            <button id="edit-balance" class="mt-2 bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Edit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Last 10 Transactions -->
+            <div class="mb-6">
+                <div class="p-4 bg-white rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold mb-4">Last 10 Transactions</h3>
+                    <ul class="list-disc pl-5 mb-4">
+                        {% for transaction in transactions %}
+                        <li class="mb-4">
+                            <p><strong>Date:</strong> {{ transaction.transaction_date }}</p>
+                            <p><strong>Amount:</strong> ₹{{ transaction.amount }}</p>
+                            <p><strong>Status:</strong> {{ transaction.status }}</p>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <button id="download-csv" class="bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">
+                        Download Transactions as CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Edit Forms (Hidden by default) -->
+<div id="edit-forms" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <!-- Username Edit Form -->
+        <div id="edit-username-form" class="hidden mb-4">
+            <h3 class="text-lg font-semibold mb-2">Edit Username</h3>
+            <form action="{{ url_for('update_username') }}" method="POST">
+                <div class="mb-4">
+                    <label for="new-username" class="block text-sm font-medium text-gray-700">New Username</label>
+                    <input type="text" id="new-username" name="new_username" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm" required>
+                </div>
+                <button type="submit" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Update Username</button>
+                <button type="button" id="close-edit-username" class="mt-2 w-full bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 focus:outline-none">Cancel</button>
+            </form>
+        </div>
+
+        <!-- Bank Account Details Edit Form -->
+        <div id="edit-bank-details-form" class="hidden">
+            <h3 class="text-lg font-semibold mb-2">Edit Bank Account Details</h3>
+            <form action="{{ url_for('update_bank_details') }}" method="POST">
+                <div class="mb-4">
+                    <label for="new-account-number" class="block text-sm font-medium text-gray-700">Account Number</label>
+                    <input type="text" id="new-account-number" name="new_account_number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm" required>
+                </div>
+                <div class="mb-4">
+                    <label for="new-bank-name" class="block text-sm font-medium text-gray-700">Bank Name</label>
+                    <input type="text" id="new-bank-name" name="new_bank_name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm" required>
+                </div>
+                <div class="mb-4">
+                    <label for="new-ifsc-code" class="block text-sm font-medium text-gray-700">IFSC Code</label>
+                    <input type="text" id="new-ifsc-code" name="new_ifsc_code" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm" required>
+                </div>
+                <div class="mb-4">
+                    <label for="new-balance" class="block text-sm font-medium text-gray-700">Balance</label>
+                    <input type="number" id="new-balance" name="new_balance" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm" required>
+                </div>
+                <button type="submit" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Update Bank Details</button>
+                <button type="button" id="close-edit-bank-details" class="mt-2 w-full bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 focus:outline-none">Cancel</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+    // Function to handle showing and hiding edit forms
+    function showEditForm(formId) {
+        document.getElementById('edit-forms').classList.remove('hidden');
+        document.getElementById(formId).classList.remove('hidden');
+    }
+
+    document.getElementById('edit-username').addEventListener('click', function() {
+        showEditForm('edit-username-form');
+    });
+
+    document.getElementById('edit-account-number').addEventListener('click', function() {
+        showEditForm('edit-bank-details-form');
+        document.getElementById('new-account-number').value = document.getElementById('account-number').innerText;
+    });
+
+    document.getElementById('edit-bank-name').addEventListener('click', function() {
+        showEditForm('edit-bank-details-form');
+        document.getElementById('new-bank-name').value = document.getElementById('bank-name').innerText;
+    });
+
+    document.getElementById('edit-ifsc-code').addEventListener('click', function() {
+        showEditForm('edit-bank-details-form');
+        document.getElementById('new-ifsc-code').value = document.getElementById('ifsc-code').innerText;
+    });
+
+    document.getElementById('edit-balance').addEventListener('click', function() {
+        showEditForm('edit-bank-details-form');
+        document.getElementById('new-balance').value = document.getElementById('balance').innerText.replace('₹', '').trim();
+    });
+
+    document.getElementById('close-edit-username').addEventListener('click', function() {
+        document.getElementById('edit-forms').classList.add('hidden');
+        document.getElementById('edit-username-form').classList.add('hidden');
+    });
+
+    document.getElementById('close-edit-bank-details').addEventListener('click', function() {
+        document.getElementById('edit-forms').classList.add('hidden');
+        document.getElementById('edit-bank-details-form').classList.add('hidden');
+    });
+
+    // Function to handle CSV download
+    document.getElementById('download-csv').addEventListener('click', function() {
+        fetch('/download-transactions')
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'transactions.csv';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Error downloading CSV:', error));
+    });
+</script>
+{% endblock %}
+{% endblock %}

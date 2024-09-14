@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayMate Dashboard</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'pm-blue': '#161032',
+                        'pm-beige': '#F2D398',
+                        'pm-yellow': '#ffc53a',
+                        'pm-orange': '#DE1A1A',
+                    },
+                }
+            }
+        }
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('{{ url_for('static', filename='service-worker.js') }}')
+              .then(registration => {
+                console.log('Service Worker registered with scope:', registration.scope);
+              })
+              .catch(error => {
+                console.log('Service Worker registration failed:', error);
+              });
+          });
+        }
+    </script>
+      
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+</head>
+<body class="bg-pm-beige text-pm-blue">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="bg-pm-blue w-64 min-h-screen p-4">
+            <div class="flex items-center mb-8">
+                <img class="h-8 w-auto mr-2" src="{{ url_for('static', filename='Images/logo.png') }}" alt="PayMate Logo">
+                <div class="text-xl font-semibold text-pm-beige">PayMate</div>
+            </div>
+            <nav>
+                <!-- Removed onboarding link -->
+                <a href="{{ url_for('dashboard') }}" class="flex items-center p-2 rounded-md mb-2 hover:bg-pm-yellow text-pm-beige hover:text-pm-blue">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    Dashboard
+                </a>
+                <a href="{{ url_for('transaction') }}" class="flex items-center p-2 rounded-md mb-2 hover:bg-pm-yellow text-pm-beige hover:text-pm-blue">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                    Transactions
+                </a>
+                <a href="{{ url_for('bank_details') }}" class="flex items-center p-2 rounded-md mb-2 hover:bg-pm-yellow text-pm-beige hover:text-pm-blue">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>
+                    Bank Details
+                </a>
+                <a href="{{ url_for('profile') }}" class="flex items-center p-2 rounded-md mb-2 hover:bg-pm-yellow text-pm-beige hover:text-pm-blue">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Profile
+                </a>
+
+                <!-- Admin Option (conditionally displayed) -->
+                {% if user and user.is_admin %}
+                <a href="{{ url_for('admin') }}" class="flex items-center p-2 rounded-md mb-2 hover:bg-pm-yellow text-pm-beige hover:text-pm-blue">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 0V4m0 4c1.657 0 3 1.343 3 3s-1.343 3-3 3m0-6H8m4 4h4"></path></svg>
+                    Admin Panel
+                </a>
+                {% endif %}
+                
+                <a href="{{ url_for('logout') }}" class="flex items-center p-2 rounded-md mb-2 hover:bg-pm-yellow text-pm-beige hover:text-pm-blue">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    Logout
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="bg-pm-blue p-4 flex items-center justify-between">
+                <h1 class="text-2xl font-bold text-pm-beige">{% block title %}Dashboard{% endblock %}</h1>
+                <div class="relative">
+                    <button class="text-pm-beige hover:text-pm-yellow focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6zM4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"></path></svg>
+                        <span class="absolute top-0 right-0 block h-2 w-2 bg-pm-orange rounded-full"></span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-pm-beige p-6">
+                {% block content %}
+                <!-- Content for each page will go here -->
+                <div class="bg-pm-blue rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold text-pm-beige mb-4">Welcome to your Dashboard</h2>
+                    <p class="text-pm-yellow">This is where the main content for each page will be displayed.</p>
+                </div>
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

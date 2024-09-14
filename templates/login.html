@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'pm-blue': '#161032',
+                        'pm-beige': '#faff81',
+                        'pm-yellow': '#ffc53a',
+                        'pm-orange': '#DE1A1A',
+                    },
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-pm-blue flex items-center justify-center min-h-screen">
+    <div class="relative w-full max-w-sm p-8 bg-white shadow-xl rounded-lg">
+        <div class="absolute inset-x-0 top-0 flex justify-center -translate-y-12">
+            <img src="{{ url_for('static', filename='Images/logo.png') }}" alt="Logo" class="w-24 h-20 rounded-full shadow-lg">
+        </div>
+        <h3 class="text-center text-2xl font-bold text-pm-blue mb-6">Login</h3>
+        <form method="POST">
+            <div class="mb-4">
+                <label for="username" class="block text-sm font-medium text-pm-blue">Username</label>
+                <input type="text" id="username" name="username" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm" required>
+            </div>
+            <div class="mb-4">
+                <label for="password" class="block text-sm font-medium text-pm-blue">Password</label>
+                <input type="password" id="password" name="password" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm" required>
+            </div>
+            <button type="submit" class="w-full px-4 py-2 bg-pm-yellow text-white font-semibold rounded-md shadow-md hover:bg-pm-orange focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pm-yellow">Login</button>
+        </form>
+        <div class="text-center mt-4">
+            <a href="{{ url_for('signup') }}" class="text-pm-yellow hover:underline">Don't have an account? Sign up</a>
+        </div>
+    </div>
+</body>
+</html>

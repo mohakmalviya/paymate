@@ -1,0 +1,99 @@
+body {
+    background-color: #f8f9fa;
+}
+
+h3 {
+    margin-top: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+/* styles.css or within a <style> block */
+.custom-input {
+    color: black; /* Text color inside input fields */
+    background-color: #f8f9fa; /* Light background for better contrast */
+}
+
+.btn-custom {
+    background-color: #007bff; /* Change to your preferred button color */
+    color: white; /* Text color for the button */
+}
+
+.btn-custom:hover {
+    background-color: #0056b3; /* Darker shade for hover effect */
+}
+
+/* Ensuring the form fields are full-width on smaller screens */
+@media (max-width: 576px) {
+    .form-control {
+        width: 100%;
+    }
+}
+
+
+/* Center the form and give it a clean, modern look */
+.signup-form {
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    transition: transform 0.3s ease;
+}
+
+.signup-form:hover {
+    transform: translateY(-5px);
+}
+
+.signup-form h3 {
+    color: #333;
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+/* Custom input styles */
+.custom-input {
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+}
+
+.custom-input:focus {
+    border-color: #007bff;
+    box-shadow: 0px 0px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* Button styling */
+.btn-custom {
+    background-color: #007bff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 1.1rem;
+    color: #fff;
+    cursor: pointer;
+    width: 100%;
+    transition: background-color 0.3s ease;
+}
+
+.btn-custom:hover {
+    background-color: #0056b3;
+}
+
+.btn-block {
+    display: block;
+    width: 100%;
+}
+
+.card {
+    border: none;
+}
+
+/* Responsive behavior */
+@media (max-width: 768px) {
+    .col-md-6 {
+        width: 100%;
+    }
+}

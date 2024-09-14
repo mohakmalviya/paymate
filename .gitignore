@@ -1,0 +1,62 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Packages
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg-info/
+
+# Virtual environments (if not using a Docker container)
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+
+# pyenv
+.python-version
+
+# Flask cache files
+instance/
+*.db
+*.sqlite3
+
+# Environment variables file (if you have sensitive keys like MongoDB URIs)
+.env
+
+# Logs and database files
+*.log
+*.sql
+*.sqlite
+*.sqlite3
+
+# Vercel-specific
+.vercel/
+
+# Static assets or PWA generated files
+static/service-worker.js
+static/manifest.json
+static/qrcodes/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# .env file
+.env

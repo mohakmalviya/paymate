@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex flex-col h-full">
+    <!-- Header Section -->
+    <header class="bg-pm-blue text-white p-4">
+        <h1 class="text-2xl font-bold">Transactions</h1>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6">
+        <div class="bg-white p-8 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-6">Transactions</h2>
+            <div class="flex gap-4 mb-6">
+                <button id="show-bank-balance" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Bank Balance</button>
+                <button id="show-send-money" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send Money</button>
+                <button id="show-receive-money" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Receive Money</button>
+            </div>
+
+            <!-- Bank Balance Section -->
+            <div id="bank-balance-section" class="hidden mb-6">
+                <div class="p-4 bg-white rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold mb-2">Bank Balance</h3>
+                    <p class="px-4 py-2">₹{{ bank_balance }}</p>
+                </div>
+            </div>
+
+            <!-- Send Money Section -->
+            <div id="send-money-section" class="hidden mb-6">
+                <div class="p-4 bg-white rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold mb-2">Send Money</h3>
+                    <div class="flex gap-4 mb-4">
+                        <button id="send-link" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send Using Payment Link</button>
+                        <button id="send-upi" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send Using UPI ID</button>
+                        <button id="send-qr" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send Using QR Code</button>
+                    </div>
+
+                    <!-- Payment Link Form -->
+                    <div id="payment-link-form" class="hidden mb-4">
+                        <form method="POST" action="{{ url_for('transaction') }}">
+                            <input type="hidden" name="method" value="payment_link">
+                            <div class="mb-4">
+                                <label for="payment-link" class="block text-sm font-medium text-gray-700">Payment Link</label>
+                                <input type="text" id="payment-link" name="recipient" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm">
+                            </div>
+                            <div class="mb-4">
+                                <label for="amount-link" class="block text-sm font-medium text-gray-700">Amount</label>
+                                <input type="number" id="amount-link" name="amount" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm">
+                            </div>
+                            <button type="submit" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send Money</button>
+                        </form>
+                    </div>
+
+                    <!-- UPI ID Form -->
+                    <div id="upi-id-form" class="hidden mb-4">
+                        <form method="POST" action="{{ url_for('transaction') }}">
+                            <input type="hidden" name="method" value="upi_id">
+                            <div class="mb-4">
+                                <label for="upi-id" class="block text-sm font-medium text-gray-700">UPI ID</label>
+                                <input type="text" id="upi-id" name="recipient" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm">
+                            </div>
+                            <div class="mb-4">
+                                <label for="amount-upi" class="block text-sm font-medium text-gray-700">Amount</label>
+                                <input type="number" id="amount-upi" name="amount" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm">
+                            </div>
+                            <button type="submit" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send Money</button>
+                        </form>
+                    </div>
+
+                    <!-- QR Code Scanner Form -->
+                    <div id="qr-code-scanner" class="hidden mb-4">
+                        <div id="qr-code-reader" class="w-full h-64"></div>
+                        <p id="qr-code-status" class="text-center mt-4">Scanning QR Code...</p>
+                    </div>
+                    <div id="qr-form" class="hidden mb-4">
+                        <form method="POST" action="{{ url_for('transaction') }}">
+                            <input type="hidden" name="method" value="qr_code">
+                            <div class="mb-4">
+                                <label for="amount-qr" class="block text-sm font-medium text-gray-700">Amount</label>
+                                <input type="number" id="amount-qr" name="amount" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm">
+                            </div>
+                            <input type="hidden" id="recipient-qr" name="recipient">
+                            <button type="submit" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send Money</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Receive Money Section -->
+            <div id="receive-money-section" class="hidden mb-6">
+                <div class="p-4 bg-white rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold mb-2">Receive Money</h3>
+                    <p class="mb-4">Share your QR code and PayMate Transaction ID for receiving payments.</p>
+                    <div class="mb-4">
+                        {% if qr_code %}
+                            <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" id="receiver-qr-code" class="w-32 h-32 mx-auto mb-4">
+                        {% else %}
+                            <p class="text-center text-sm font-medium">No QR Code available</p>
+                        {% endif %}
+                        <p class="text-center text-sm font-medium">PayMate ID: <span id="paymate-id">{{ user.upi_id }}</span></p>
+                    </div>
+                    <div class="text-center">
+                        <button id="share-btn" class="bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Share</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+<script>
+    // JavaScript to handle section toggling
+    document.getElementById('show-bank-balance').addEventListener('click', function() {
+        document.getElementById('bank-balance-section').classList.remove('hidden');
+        document.getElementById('send-money-section').classList.add('hidden');
+        document.getElementById('receive-money-section').classList.add('hidden');
+    });
+
+    document.getElementById('show-send-money').addEventListener('click', function() {
+        document.getElementById('bank-balance-section').classList.add('hidden');
+        document.getElementById('send-money-section').classList.remove('hidden');
+        document.getElementById('receive-money-section').classList.add('hidden');
+    });
+
+    document.getElementById('show-receive-money').addEventListener('click', function() {
+        document.getElementById('bank-balance-section').classList.add('hidden');
+        document.getElementById('send-money-section').classList.add('hidden');
+        document.getElementById('receive-money-section').classList.remove('hidden');
+    });
+
+    // Handle form visibility based on selected send money method
+    document.getElementById('send-link').addEventListener('click', function() {
+        document.getElementById('payment-link-form').classList.remove('hidden');
+        document.getElementById('upi-id-form').classList.add('hidden');
+        document.getElementById('qr-code-scanner').classList.add('hidden');
+        document.getElementById('qr-form').classList.add('hidden');
+    });
+
+    document.getElementById('send-upi').addEventListener('click', function() {
+        document.getElementById('payment-link-form').classList.add('hidden');
+        document.getElementById('upi-id-form').classList.remove('hidden');
+        document.getElementById('qr-code-scanner').classList.add('hidden');
+        document.getElementById('qr-form').classList.add('hidden');
+    });
+
+    document.getElementById('send-qr').addEventListener('click', function() {
+        document.getElementById('payment-link-form').classList.add('hidden');
+        document.getElementById('upi-id-form').classList.add('hidden');
+        document.getElementById('qr-code-scanner').classList.remove('hidden');
+        document.getElementById('qr-form').classList.remove('hidden');
+    });
+
+    // Initialize the QR code scanner
+    function onScanSuccess(decodedText, decodedResult) {
+        // Handle the result here (e.g., pre-fill UPI ID field with decodedText)
+        document.getElementById('recipient-qr').value = decodedText;
+        // Stop the scanner after successful scan
+        html5QrCode.stop().then((ignore) => {
+            console.log("QR code scanning stopped.");
+        }).catch((err) => {
+            console.log("Error stopping the QR code scanner: ", err);
+        });
+    }
+
+    const html5QrCode = new Html5Qrcode("qr-code-scanner");
+    html5QrCode.start(
+        { facingMode: "environment" }, 
+        {
+            fps: 10, 
+            qrbox: 250 
+        }, 
+        onScanSuccess
+    ).catch((err) => {
+        console.log("Unable to start the QR code scanner: ", err);
+    });
+
+    // Share functionality for Receive Money section
+    document.getElementById('share-btn').addEventListener('click', function() {
+        const paymateId = document.getElementById('paymate-id').innerText;
+        const qrCodeImg = document.getElementById('receiver-qr-code').src;
+
+        if (navigator.share) {
+            navigator.share({
+                title: 'PayMate - Receive Money',
+                text: `Receive money using PayMate ID: ${paymateId}`,
+                url: qrCodeImg
+            }).then(() => {
+                console.log('Thanks for sharing!');
+            }).catch((error) => {
+                console.error('Error sharing:', error);
+            });
+        } else {
+            // Fallback for browsers that do not support Web Share API
+            alert('Web Share API not supported in your browser.');
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block head %}
+{{ super() }}
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .tab-button { transition: all 0.3s; }
+    .tab-button:hover { background-color: #3b82f6; color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold mb-8 text-gray-800">Admin Panel</h1>
+    
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="flex border-b">
+            <button onclick="changeTab('usersTab')" class="tab-button px-6 py-3 font-semibold text-gray-700 focus:outline-none">Users</button>
+            <button onclick="changeTab('bankTab')" class="tab-button px-6 py-3 font-semibold text-gray-700 focus:outline-none">Bank Data</button>
+            <button onclick="changeTab('transactionsTab')" class="tab-button px-6 py-3 font-semibold text-gray-700 focus:outline-none">Transactions</button>
+            <button onclick="changeTab('kycTab')" class="tab-button px-6 py-3 font-semibold text-gray-700 focus:outline-none">KYC Approvals</button>
+            <button onclick="changeTab('dashboardTab')" class="tab-button px-6 py-3 font-semibold text-gray-700 focus:outline-none">Dashboard</button>
+        </div>
+
+        <div id="usersTab" class="tab-content p-6">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Users</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full table-auto">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-gray-600">Username</th>
+                            <th class="px-4 py-2 text-left text-gray-600">Email</th>
+                            <th class="px-4 py-2 text-left text-gray-600">KYC Status</th>
+                            <th class="px-4 py-2 text-left text-gray-600">Balance</th>
+                            <th class="px-4 py-2 text-left text-gray-600">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr class="border-b hover:bg-gray-100">
+                            <td class="px-4 py-2">{{ user['username'] }}</td>
+                            <td class="px-4 py-2">{{ user['email'] }}</td>
+                            <td class="px-4 py-2">{{ user['kyc_status'] }}</td>
+                            <td class="px-4 py-2">₹{{ user.get('bank_balance', 'N/A') }}</td>
+                            <td class="px-4 py-2">
+                                <button onclick="viewUserDetails('{{ user['_id'] }}')" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded">View</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="bankTab" class="tab-content p-6 hidden">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Bank Data</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full table-auto">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-gray-600">Account ID</th>
+                            <th class="px-4 py-2 text-left text-gray-600">Account Number</th>
+                            <th class="px-4 py-2 text-left text-gray-600">Bank Name</th>
+                            <th class="px-4 py-2 text-left text-gray-600">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bank in bank_data %}
+                        <tr class="border-b hover:bg-gray-100">
+                            <td class="px-4 py-2">{{ bank['_id'] }}</td>
+                            <td class="px-4 py-2">{{ bank['account_number'] }}</td>
+                            <td class="px-4 py-2">{{ bank['bank_name'] }}</td>
+                            <td class="px-4 py-2">{{ bank['balance'] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="transactionsTab" class="tab-content p-6 hidden">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Transactions</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full table-auto">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-gray-600">Transaction ID</th>
+                            <th class="px-4 py-2 text-left text-gray-600">Sender</th>
+                            <th class="px-4 py-2 text-left text-gray-600">Recipient</th>
+                            <th class="px-4 py-2 text-left text-gray-600">Amount</th>
+                            <th class="px-4 py-2 text-left text-gray-600">Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr class="border-b hover:bg-gray-100">
+                            <td class="px-4 py-2">{{ transaction['_id'] }}</td>
+                            <td class="px-4 py-2">{{ transaction['sender'] }}</td>
+                            <td class="px-4 py-2">{{ transaction['recipient'] }}</td>
+                            <td class="px-4 py-2">{{ transaction['amount'] }}</td>
+                            <td class="px-4 py-2">{{ transaction['timestamp'] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="kycTab" class="tab-content p-6 hidden">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Pending KYC Approvals</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full table-auto">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-gray-600">Username</th>
+                            <th class="px-4 py-2 text-left text-gray-600">Email</th>
+                            <th class="px-4 py-2 text-left text-gray-600">KYC Status</th>
+                            
+                            <th class="px-4 py-2 text-left text-gray-600">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr class="border-b hover:bg-gray-100">
+                            <td class="px-4 py-2">{{ user['username'] }}</td>
+                            <td class="px-4 py-2">{{ user['email'] }}</td>
+                            <td class="px-4 py-2">{{ user.get('kyc_status', 'N/A') }}</td>
+                            <td class="px-4 py-2">
+                                <button onclick="viewUserDetails('{{ user['_id'] }}')" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded">View</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="dashboardTab" class="tab-content p-6 hidden">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Dashboard</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-4">User Statistics</h3>
+                    <canvas id="userChart"></canvas>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-4">Transaction Volume</h3>
+                    <canvas id="transactionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-6 flex justify-center">
+        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            <a href="{{ url_for('admin', page=prev_page) }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <span class="sr-only">Previous</span>
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+            </a>
+            {% for p in pages %}
+            <a href="{{ url_for('admin', page=p) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 {% if p == current_page %}bg-blue-50 border-blue-500{% endif %}">
+                {{ p }}
+            </a>
+            {% endfor %}
+            <a href="{{ url_for('admin', page=next_page) }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <span class="sr-only">Next</span>
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                </svg>
+            </a>
+        </nav>
+    </div>
+</div>
+
+<script>
+    function changeTab(tabName) {
+        const tabs = document.querySelectorAll('.tab-content');
+        tabs.forEach(tab => tab.classList.add('hidden'));
+        document.getElementById(tabName).classList.remove('hidden');
+
+        const buttons = document.querySelectorAll('.tab-button');
+        buttons.forEach(button => button.classList.remove('bg-blue-500', 'text-white'));
+        document.querySelector(`[onclick="changeTab('${tabName}')"]`).classList.add('bg-blue-500', 'text-white');
+    }
+
+    function viewUserDetails(userId) {
+        // Implement user details view functionality
+        console.log('Viewing user details for ID:', userId);
+    }
+
+    function approveKYC(userId) {
+        // Implement KYC approval functionality
+        console.log('Approving KYC for user ID:', userId);
+    }
+
+    function rejectKYC(userId) {
+        // Implement KYC rejection functionality
+        console.log('Rejecting KYC for user ID:', userId);
+    }
+
+    // Sample data for charts (replace with actual data from your backend)
+    const userChartData = {
+        labels: ['Verified', 'Pending', 'Rejected'],
+        datasets: [{
+            data: [65, 25, 10],
+            backgroundColor: ['#4CAF50', '#FFC107', '#F44336']
+        }]
+    };
+
+    const transactionChartData = {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [{
+            label: 'Transaction Volume',
+            data: [12, 19, 3, 5, 2, 3],
+            borderColor: '#2196F3',
+            tension: 0.1
+        }]
+    };
+
+    // Create charts
+    window.onload = function() {
+        const userCtx = document.getElementById('userChart').getContext('2d');
+        new Chart(userCtx, {
+            type: 'pie',
+            data: userChartData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'User KYC Status'
+                    }
+                }
+            }
+        });
+
+        const transactionCtx = document.getElementById('transactionChart').getContext('2d');
+        new Chart(transactionCtx, {
+            type: 'line',
+            data: transactionChartData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Monthly Transaction Volume'
+                    }
+                }
+            }
+        });
+    };
+
+    // Set the initial active tab
+    changeTab('usersTab');
+</script>
+{% endblock %}
