@@ -57,3 +57,7 @@ static/qrcodes/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Other files 
+data_generation.py
+generate_qr_code.py
