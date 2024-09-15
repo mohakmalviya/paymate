@@ -582,7 +582,8 @@ def transaction():
                     'sender': session['username'],
                     'recipient': recipient,
                     'amount': encrypted_amount,
-                    'iv': iv
+                    'iv': iv,
+                    'timestamp': datetime.utcnow()  # Use UTC time
                 })
                 
                 flash('Transaction successful!')
@@ -674,7 +675,7 @@ def download_transactions():
 
     # Convert transactions to a DataFrame and then to CSV
     df = pd.DataFrame([{
-        'Date': t['timestamp'],
+        'Date': t['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),  # Format the datetime
         'Amount': decrypt_data(base64.b64decode(current_user['key']), t['iv'], t['amount']),
         'Sender': t['sender'],
         'Recipient': t['recipient']
