@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: my-flask-app
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    # Optional: Add any environment variables needed for your app
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: OTHER_ENV_VAR
+        value: value_here
+    # Optional: Set the port number if needed (Render typically handles this automatically)
+    # port: 8000
+    # Optional: Specify a region if required (leave it out for automatic selection)
+    # region: oregon
+
+# Optional: Define other resources like databases or jobs here
