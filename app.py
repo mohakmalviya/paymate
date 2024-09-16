@@ -22,7 +22,7 @@ from pymongo import MongoClient
 from gridfs import GridFS
 import pandas as pd
 from bson.decimal128 import Decimal128
-
+from io import BytesIO
 load_dotenv()
 
 app = Flask(__name__)
@@ -561,17 +561,20 @@ def transaction():
         elif method == 'upi_id':
             recipient_user = user_collection.find_one({'upi_id': recipient})
         elif method == 'qr_code':
+            # Assuming the QR code contains the recipient's username
             recipient_user = user_collection.find_one({'username': recipient})
 
         if recipient_user:
             if amount <= bank_balance:
-                # Deduct amount from sender and add to recipient
+                # Deduct amount from sender
                 user_collection.update_one(
                     {'username': session['username']},
                     {'$inc': {'bank_balance': -amount}}
                 )
+                
+                # Add amount to recipient
                 user_collection.update_one(
-                    {'username': recipient},
+                    {'username': recipient_user['username']},
                     {'$inc': {'bank_balance': amount}}
                 )
                 
@@ -580,7 +583,7 @@ def transaction():
                 
                 transaction_collection.insert_one({
                     'sender': session['username'],
-                    'recipient': recipient,
+                    'recipient': recipient_user['username'],
                     'amount': encrypted_amount,
                     'iv': iv,
                     'timestamp': datetime.utcnow()  # Use UTC time
@@ -594,7 +597,6 @@ def transaction():
             flash('Invalid recipient.')
 
     return render_template('transaction.html', user=user, bank_balance=formatted_balance, qr_code=qr_code_base64)
-
 
 @app.route('/bank-details')
 @login_required  # Ensure user is logged in
