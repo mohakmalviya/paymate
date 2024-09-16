@@ -41,28 +41,61 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        header {
+            background-color: #161032; /* pm-blue */
+            padding: 1rem; /* Tailwind p-4 */
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Center the title */
+            position: relative; /* To allow positioning for future additions */
+          }
+          
+        header h1 {
+            color: #F2D398; /* pm-beige */
+            font-size: 1.25rem; /* Tailwind text-xl */
+            font-weight: 600; /* Tailwind font-semibold */
+            text-align: center; /* Ensure text stays centered */
+          }
+          
     </style>
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 </head>
 <body class="bg-pm-beige text-pm-blue">
     <div class="flex flex-col h-screen">
         <!-- Header with Hamburger Menu -->
-        <header class="bg-pm-blue p-4 flex items-center justify-between">
+        <header class="bg-pm-blue p-4 flex items-center justify-between relative">
             <div class="flex items-center">
+                <!-- Hamburger Menu (Left-aligned) -->
                 <button id="menu-toggle" class="text-pm-beige hover:text-pm-yellow focus:outline-none mr-4 lg:hidden">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                 </button>
-                <h1 class="text-2xl font-bold text-pm-beige">{% block title %}Dashboard{% endblock %}</h1>
             </div>
-            <div class="relative">
-                <button class="text-pm-beige hover:text-pm-yellow focus:outline-none">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6zM4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"></path></svg>
+            
+            <!-- Page Title (Center-aligned) -->
+            <h1 class="absolute inset-0 flex items-center justify-center text-pm-beige font-semibold text-xl">
+                {{ page_title | default('Dashboard') }}
+            </h1>
+        
+            <!-- Notifications and Avatar (Right-aligned) -->
+            <div class="flex items-center space-x-4">
+                <!-- Notification Bell -->
+                <button class="relative text-pm-beige hover:text-pm-yellow focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-2.81A2 2 0 0118 13V9a6 6 0 10-12 0v4a2 2 0 01-.595 1.414L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                    </svg>
+                    <!-- Notification Badge -->
                     <span class="absolute top-0 right-0 block h-2 w-2 bg-pm-orange rounded-full"></span>
+                </button>
+        
+                <!-- Avatar -->
+                <button class="text-pm-beige hover:text-pm-yellow focus:outline-none">
+                    <img class="w-8 h-8 rounded-full" src="{{ url_for('static', filename='Images/logo.png') }}" alt="User Avatar">
                 </button>
             </div>
         </header>
+        
 
         <div class="flex flex-1 overflow-hidden">
             <!-- Sidebar -->
@@ -103,13 +136,13 @@
 
             <!-- Main Content Area -->
             <main class="flex-1 overflow-x-hidden overflow-y-auto bg-pm-beige p-6">
-                {% block content %}
-                <!-- Content for each page will go here -->
                 <div class="bg-pm-blue rounded-lg shadow-lg p-6">
-                    <h2 class="text-xl font-semibold text-pm-beige mb-4">Welcome to your Dashboard</h2>
-                    <p class="text-pm-yellow">This is where the main content for each page will be displayed.</p>
+                    <h2 class="text-xl font-semibold text-pm-beige mb-4">
+                        Welcome {{ user.username | default('User') }}, to your Dashboard
+                    </h2>
+                    <p class="text-pm-yellow">Let's upgrade transactions in the digital age</p>
                 </div>
-                {% endblock %}
+                {% block content %}{% endblock %}
             </main>
         </div>
     </div>

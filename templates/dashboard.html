@@ -4,7 +4,6 @@
 <div class="container mx-auto p-6">
     <!-- Welcome Section -->
     <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-        <h3 class="text-2xl font-semibold text-pm-blue mb-4">Welcome, {{ user.first_name }} {{ user.last_name }}</h3>
         {% if bank_account %}
             <p class="text-pm-blue"><strong>Account Balance:</strong> ₹{{ bank_account.balance }}</p>
         {% else %}

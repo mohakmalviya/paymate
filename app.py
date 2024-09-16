@@ -376,6 +376,8 @@ def admin():
     if 'username' not in session or not user_collection.find_one({'username': session['username'], 'is_admin': True}):
         return redirect(url_for('login'))
     
+    user = user_collection.find_one({'username': session['username']})
+
     # Pagination parameters
     page = int(request.args.get('page', 1))
     per_page = 500
@@ -385,7 +387,7 @@ def admin():
 
     # Fetch data with pagination, including bank balance
     users = list(user_collection.find({}, {'username': 1, 'email': 1, 'kyc_status': 1, 'bank_balance': 1}).skip(skip).limit(per_page))
-    
+
     for user in users:
         if isinstance(user.get('bank_balance'), Decimal128):
             user['bank_balance'] = str(user['bank_balance'])
@@ -408,6 +410,7 @@ def admin():
     pending_kyc = user_collection.find({'kyc_status': 'pending'})
 
     return render_template('admin.html',
+                           user=user,
                            pending_kyc=pending_kyc,
                            bank_data=bank_data,
                            users=users,
@@ -700,4 +703,3 @@ def logout():
 if __name__ == '__main__':
     #port = int(os.environ.get("PORT", 8000))  # Default to port 8000 if PORT is not set
     app.run(debug=True)
-    #pass

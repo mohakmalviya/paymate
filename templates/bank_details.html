@@ -42,7 +42,7 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-700">Balance:</p>
-                            <p class="text-lg" id="balance">₹{{ bank.balance if bank.balance else '0.00' }}</p>
+                            <p class="text-lg" id="balance">${{ bank.balance if bank.balance else '0.00' }}</p>
                             <button id="edit-balance" class="mt-2 bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Edit</button>
                         </div>
                     </div>
@@ -57,7 +57,7 @@
                         {% for transaction in transactions %}
                         <li class="mb-4">
                             <p><strong>Date:</strong> {{ transaction.transaction_date }}</p>
-                            <p><strong>Amount:</strong> ₹{{ transaction.amount }}</p>
+                            <p><strong>Amount:</strong> ${{ transaction.amount }}</p>
                             <p><strong>Status:</strong> {{ transaction.status }}</p>
                         </li>
                         {% endfor %}
