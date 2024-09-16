@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: app
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    # Optional: Add any environment variables needed for your app
+    # Optional: Set the port number if needed (Render typically handles this automatically)
+    # port: 8000
+    # Optional: Specify a region if required (leave it out for automatic selection)
+    # region: oregon
+
+# Optional: Define other resources like databases or jobs here
