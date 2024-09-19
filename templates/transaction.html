@@ -129,106 +129,160 @@
 </div>
 
 <script>
-function changeTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
-    document.getElementById(tabId).classList.remove('hidden');
-}
+    function changeTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+        document.getElementById(tabId).classList.remove('hidden');
+    }
 
-document.getElementById('sendLinkBtn').addEventListener('click', function() {
-    document.getElementById('paymentLinkForm').classList.remove('hidden');
-    document.getElementById('upiIdForm').classList.add('hidden');
-    document.getElementById('qrCodeScanner').classList.add('hidden');
-    document.getElementById('uploadQrForm').classList.add('hidden');
-    document.getElementById('qrCodeResultForm').classList.add('hidden');
-});
+    document.getElementById('sendLinkBtn').addEventListener('click', function () {
+        document.getElementById('paymentLinkForm').classList.remove('hidden');
+        document.getElementById('upiIdForm').classList.add('hidden');
+        document.getElementById('qrCodeScanner').classList.add('hidden');
+        document.getElementById('uploadQrForm').classList.add('hidden');
+        document.getElementById('qrCodeResultForm').classList.add('hidden');
+    });
 
-document.getElementById('sendUpiBtn').addEventListener('click', function() {
-    document.getElementById('upiIdForm').classList.remove('hidden');
-    document.getElementById('paymentLinkForm').classList.add('hidden');
-    document.getElementById('qrCodeScanner').classList.add('hidden');
-    document.getElementById('uploadQrForm').classList.add('hidden');
-    document.getElementById('qrCodeResultForm').classList.add('hidden');
-});
+    document.getElementById('sendUpiBtn').addEventListener('click', function () {
+        document.getElementById('upiIdForm').classList.remove('hidden');
+        document.getElementById('paymentLinkForm').classList.add('hidden');
+        document.getElementById('qrCodeScanner').classList.add('hidden');
+        document.getElementById('uploadQrForm').classList.add('hidden');
+        document.getElementById('qrCodeResultForm').classList.add('hidden');
+    });
 
-document.getElementById('sendQrBtn').addEventListener('click', function() {
-    document.getElementById('qrCodeScanner').classList.remove('hidden');
-    document.getElementById('uploadQrForm').classList.remove('hidden');
-    document.getElementById('paymentLinkForm').classList.add('hidden');
-    document.getElementById('upiIdForm').classList.add('hidden');
-    document.getElementById('qrCodeResultForm').classList.add('hidden');
-});
+    document.getElementById('sendQrBtn').addEventListener('click', function () {
+        document.getElementById('qrCodeScanner').classList.remove('hidden');
+        document.getElementById('uploadQrForm').classList.remove('hidden');
+        document.getElementById('paymentLinkForm').classList.add('hidden');
+        document.getElementById('upiIdForm').classList.add('hidden');
+        document.getElementById('qrCodeResultForm').classList.add('hidden');
+    });
 
-document.getElementById('scanQrCodeBtn').addEventListener('click', function() {
-    document.getElementById('scannerSection').classList.remove('hidden');
-    startCamera();
-});
+    document.getElementById('scanQrCodeBtn').addEventListener('click', function () {
+        document.getElementById('scannerSection').classList.remove('hidden');
+        startCamera();
+    });
 
-function startCamera() {
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    function startCamera() {
+        navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: "environment",
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                frameRate: { ideal: 30 },
+                aspectRatio: 16 / 9
+            }
+        })
         .then(stream => {
             const video = document.getElementById('video');
             video.srcObject = stream;
             video.play();
+
+            const videoTracks = stream.getVideoTracks();
+            const width = videoTracks[0].getSettings().width;
+            const height = videoTracks[0].getSettings().height;
+
+            const canvas = document.getElementById('canvas');
+            canvas.width = width;
+            canvas.height = height;
+
             detectQrCode();
         })
         .catch(err => {
             console.error('Error accessing camera:', err);
         });
-}
+    }
 
-function detectQrCode() {
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+    function detectQrCode() {
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
 
-    if (video.paused || video.ended) return;
+        if (video.paused || video.ended) return;
 
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        // Flip the video horizontally to correct the inverted image
+        ctx.save();
+        ctx.scale(-1, 1);  // Inverts the canvas horizontally
+        ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);  // Draw video on canvas
+        ctx.restore();
 
-    // Convert to grayscale
-    const grayImageData = convertToGrayscale(imageData);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-    // Use OpenCV to process grayscale image
-    const srcMat = cv.matFromImageData(grayImageData);
-    const grayMat = new cv.Mat();
-    const qrCodeDetector = new cv.QRCodeDetector();
+        // Convert to grayscale and enhance image
+        const grayImageData = convertToGrayscale(imageData);
+        const enhancedImageData = enhanceImage(grayImageData);
 
-    // Convert the grayscale image to the correct format
-    cv.cvtColor(srcMat, grayMat, cv.COLOR_RGBA2GRAY);
+        // Use OpenCV to process the enhanced image
+        const srcMat = cv.matFromImageData(enhancedImageData);
+        const grayMat = new cv.Mat();
 
-    const [status, points, qrCode] = qrCodeDetector.detectAndDecode(grayMat);
+        cv.cvtColor(srcMat, grayMat, cv.COLOR_RGBA2GRAY);
 
-    if (status) {
-        document.getElementById('scannedRecipient').value = qrCode;
-        document.getElementById('qrCodeScanner').classList.add('hidden');
-        document.getElementById('qrCodeResultForm').classList.remove('hidden');
-        const stream = video.srcObject;
-        if (stream) {
-            const tracks = stream.getTracks();
-            tracks.forEach(track => track.stop());
+        // Apply adaptive thresholding to improve QR code clarity
+        const adaptiveThreshMat = new cv.Mat();
+        cv.adaptiveThreshold(grayMat, adaptiveThreshMat, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 11, 2);
+
+        const qrCodeDetector = new cv.QRCodeDetector();
+        const points = new cv.Mat();
+        const qrCode = new cv.Mat();
+        const decodedText = qrCodeDetector.detectAndDecode(adaptiveThreshMat, points, qrCode);
+
+        if (decodedText) {
+            document.getElementById('scannedRecipient').value = decodedText;
+            document.getElementById('qrCodeScanner').classList.add('hidden');
+            document.getElementById('qrCodeResultForm').classList.remove('hidden');
+            const stream = video.srcObject;
+            if (stream) {
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+            }
         }
+
+        srcMat.delete();
+        grayMat.delete();
+        adaptiveThreshMat.delete();
+        points.delete();
+        qrCode.delete();
+
+        requestIdleCallback(detectQrCode);
     }
 
-    srcMat.delete();
-    grayMat.delete();
-
-    requestAnimationFrame(detectQrCode);
-}
-
-function convertToGrayscale(imageData) {
-    const grayData = new Uint8ClampedArray(imageData.width * imageData.height);
-    const data = imageData.data;
-
-    for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-        grayData[i / 4] = gray;
+    // Function to convert image data to grayscale
+    function convertToGrayscale(imageData) {
+        const grayData = new Uint8ClampedArray(imageData.width * imageData.height * 4);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+            grayData[i] = gray;
+            grayData[i + 1] = gray;
+            grayData[i + 2] = gray;
+            grayData[i + 3] = data[i + 3]; // Keep the alpha channel unchanged
+        }
+        return new ImageData(grayData, imageData.width, imageData.height);
     }
 
-    return new ImageData(grayData, imageData.width, imageData.height);
-}
+    // Function to enhance the image (contrast, sharpness, etc.)
+    function enhanceImage(imageData) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = imageData.width;
+        canvas.height = imageData.height;
+
+        ctx.putImageData(imageData, 0, 0);
+
+        // Apply contrast, brightness, and sharpening filters
+        // Example: Increase contrast
+        ctx.filter = 'contrast(1.8) brightness(1.2)';
+
+        // Draw the enhanced image onto the canvas
+        ctx.drawImage(canvas, 0, 0);
+
+        // Get the enhanced image data
+        return ctx.getImageData(0, 0, canvas.width, canvas.height);
+    }
 </script>
+
 {% endblock %}

@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
-from tensorflow.keras import layers, models
+from tensorflow.keras import layers, models # type: ignore
 
 # Define paths
 IMAGE_FOLDER = 'D:/HP Shared/Data Science/Paymate/qr_codes/images/train'  # Enter your image folder path here

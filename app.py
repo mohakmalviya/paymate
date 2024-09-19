@@ -28,7 +28,16 @@ from PIL import Image
 import numpy as np
 import cv2
 from sklearn.preprocessing import LabelEncoder
-from keras.models import load_model
+from keras.models import load_model # type: ignore
+import warnings
+warnings.filterwarnings('ignore')
+import tensorflow as tf
+tf.get_logger().setLevel('ERROR')
+import logging
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
+
+
+
 
 load_dotenv()
 
