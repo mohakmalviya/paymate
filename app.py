@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file, Response
 from werkzeug.security import generate_password_hash, check_password_hash
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
@@ -23,6 +23,13 @@ from gridfs import GridFS
 import pandas as pd
 from bson.decimal128 import Decimal128
 from io import BytesIO
+from pyzbar.pyzbar import decode
+from PIL import Image
+import numpy as np
+import cv2
+from sklearn.preprocessing import LabelEncoder
+from keras.models import load_model
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -95,24 +102,6 @@ def decrypt_data(key, iv, ct):
     pt = unpad(cipher.decrypt(ct), AES.block_size).decode('utf-8')
     return pt
 
-# QR Code function
-def generate_qr_code(payment_link):
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
-        border=4,
-    )
-    qr.add_data(payment_link)
-    qr.make(fit=True)
-
-    img = qr.make_image(fill='black', back_color='white')
-
-    # Save the image to a BytesIO object
-    qr_image = io.BytesIO()
-    img.save(qr_image, format="PNG")
-    qr_image.seek(0)  # Reset file pointer to the beginning
-    return qr_image
 
 # Email verification functions
 def generate_verification_code():
@@ -429,9 +418,6 @@ def admin():
                            prev_page=prev_page,
                            next_page=next_page)
 
-
-
-
 @app.route('/claim_onboarding_amount', methods=['POST'])
 def claim_onboarding_amount():
     if 'username' not in session:
@@ -541,6 +527,70 @@ def update_kyc():
     flash("KYC documents uploaded successfully.")
     return redirect(url_for('profile'))
 
+# Load the pre-trained model and label encoder
+model = load_model('D:\HP Shared\Data Science\Paymate\qr_code_model.h5')
+
+# Load the LabelEncoder from a .npy file
+label_encoder = np.load('D:\HP Shared\Data Science\Paymate\label_encoder_classes.npy', allow_pickle=True).item()
+
+model_input_size = 128  # Adjust according to your model's input size
+
+def preprocess_image(image):
+    resized_image = cv2.resize(image, (model_input_size, model_input_size))  # Adjust size based on model
+    normalized_image = resized_image / 255.0  # Normalize if necessary
+    return np.expand_dims(normalized_image, axis=0)
+
+def decode_qr_code(qr_code_image):
+    # Convert the image to a format suitable for your model
+    image = cv2.imdecode(np.frombuffer(qr_code_image.read(), np.uint8), cv2.IMREAD_COLOR)
+    if image is None:
+        return None
+
+    image_array = preprocess_image(image)
+    predictions = model.predict(image_array)
+    predicted_class_idx = np.argmax(predictions)
+    detected_username = label_encoder.inverse_transform([predicted_class_idx])[0]
+    return detected_username
+
+def generate():
+    cap = cv2.VideoCapture(0)
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            continue
+
+        qr_codes = decode(frame)
+        detected_username = None
+
+        for qr_code in qr_codes:
+            qr_data = qr_code.data.decode('utf-8')
+            # For demonstration, assume qr_data is a path to an image
+            # You might need to handle this part based on your QR code content
+            image = cv2.imdecode(np.frombuffer(qr_data.encode(), np.uint8), cv2.IMREAD_COLOR)
+            if image is not None:
+                image_array = preprocess_image(image)
+                predictions = model.predict(image_array)
+                predicted_class_idx = np.argmax(predictions)
+                detected_username = label_encoder.inverse_transform([predicted_class_idx])[0]
+
+                points = qr_code.polygon
+                if len(points) == 4:
+                    pts = np.array([(point.x, point.y) for point in points], dtype=np.int32)
+                    cv2.polylines(frame, [pts], isClosed=True, color=(0, 255, 0), thickness=2)
+                cv2.putText(frame, detected_username, (qr_code.rect.left, qr_code.rect.top - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+
+        _, buffer = cv2.imencode('.jpg', frame)
+        frame = buffer.tobytes()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+    cap.release()
+
+@app.route('/scan_qr')
+def scan_qr():
+    return Response(generate(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/transaction', methods=['GET', 'POST'])
 def transaction():
@@ -548,17 +598,14 @@ def transaction():
         return redirect(url_for('login'))
 
     user = user_collection.find_one({'username': session['username']})
-    
-    # Fetch and convert bank balance
+
     if isinstance(user.get('bank_balance'), Decimal128):
         bank_balance = float(user['bank_balance'].to_decimal())
     else:
         bank_balance = 0.0
 
-    # Format balance to two decimal places
     formatted_balance = f"{bank_balance:.2f}"
 
-    # Retrieve QR code as a base64 string
     qr_code_binary = user.get('qr_code')
     qr_code_base64 = base64.b64encode(qr_code_binary).decode('utf-8') if qr_code_binary else None
 
@@ -579,23 +626,37 @@ def transaction():
         elif method == 'upi_id':
             recipient_user = user_collection.find_one({'upi_id': recipient})
         elif method == 'qr_code':
-            # Assuming the QR code contains the recipient's username
-            recipient_user = user_collection.find_one({'username': recipient})
+            if 'qr_code_image' in request.files:
+                qr_code_image = request.files['qr_code_image']
+                if qr_code_image:
+                    detected_username = decode_qr_code(qr_code_image)
+                    if detected_username:
+                        recipient_user = user_collection.find_one({'username': detected_username})
+                        if not recipient_user:
+                            flash('Invalid QR code. User not found.')
+                            return redirect(url_for('transaction'))
+                    else:
+                        flash('No QR code detected in the image.')
+                        return redirect(url_for('transaction'))
+                else:
+                    flash('No image uploaded.')
+                    return redirect(url_for('transaction'))
+            else:
+                flash('No image file provided.')
+                return redirect(url_for('transaction'))
 
         if recipient_user:
             if amount <= bank_balance:
-                # Deduct amount from sender
                 user_collection.update_one(
                     {'username': session['username']},
                     {'$inc': {'bank_balance': -amount}}
                 )
                 
-                # Add amount to recipient
                 user_collection.update_one(
                     {'username': recipient_user['username']},
                     {'$inc': {'bank_balance': amount}}
                 )
-                
+
                 key = base64.b64decode(sender_user['key'])
                 encrypted_amount, iv = encrypt_data(key, str(amount))
                 
@@ -604,7 +665,7 @@ def transaction():
                     'recipient': recipient_user['username'],
                     'amount': encrypted_amount,
                     'iv': iv,
-                    'timestamp': datetime.utcnow()  # Use UTC time
+                    'timestamp': datetime.utcnow()
                 })
                 
                 flash('Transaction successful!')
@@ -615,6 +676,32 @@ def transaction():
             flash('Invalid recipient.')
 
     return render_template('transaction.html', user=user, bank_balance=formatted_balance, qr_code=qr_code_base64)
+
+@app.route('/upload_qr', methods=['POST'])
+def upload_qr():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    user = user_collection.find_one({'username': session['username']})
+
+    if 'qr_code_image' in request.files:
+        qr_code_image = request.files['qr_code_image']
+        if qr_code_image:
+            detected_username = decode_qr_code(qr_code_image)
+            if detected_username:
+                recipient_user = user_collection.find_one({'username': detected_username})
+                if recipient_user:
+                    return render_template('transaction.html', user=user, qr_code=base64.b64encode(user.get('qr_code')).decode('utf-8'), recipient_user=recipient_user)
+                else:
+                    flash('No user found with the QR code.')
+            else:
+                flash('No QR code detected in the image.')
+        else:
+            flash('No image uploaded.')
+    else:
+        flash('No image file provided.')
+    
+    return redirect(url_for('transaction'))
 
 @app.route('/bank-details')
 @login_required  # Ensure user is logged in

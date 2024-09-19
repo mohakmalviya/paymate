@@ -1,0 +1,6 @@
+
+    train: D:\HP Shared\Data Science\Paymate\qr_codes\images\train
+    val: D:\HP Shared\Data Science\Paymate\qr_codes\images\train  # Or a separate validation path if available
+    nc: 1
+    names: ['qr_code']
+    
