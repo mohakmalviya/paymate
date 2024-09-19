@@ -3,17 +3,26 @@
 {% block content %}
 <div class="flex flex-col h-full">
     <!-- Header Section -->
-    <header class="bg-pm-blue text-white p-4">
-        <h1 class="text-2xl font-bold">Profile</h1>
-    </header>
+    <h1 class="text-4xl font-bold mb-8 text-pm-blue">Profile</h1>
 
     <!-- Main Content -->
     <main class="flex-1 p-6">
         <div class="bg-white p-8 rounded-lg shadow-md">
             <h2 class="text-xl font-semibold mb-6">Your Profile</h2>
 
-            <!-- Paymate Link Section -->
+            <!-- Toggle Buttons -->
             <div class="mb-6">
+                <div class="flex gap-4">
+                    <button onclick="showSection('profile-details')" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Profile Details</button>
+                    <button onclick="showSection('qr-code-section')" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">QR Code</button>
+                    <button onclick="showSection('bank-details')" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Bank Details</button>
+                    <button onclick="showSection('transactions')" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Transactions</button>
+                    <button onclick="showSection('paymate-link-section')" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Paymate Link</button>
+                </div>
+            </div>
+
+            <!-- Paymate Link Section -->
+            <div id="paymate-link-section" class="section-content mb-6 hidden">
                 <div class="p-4 bg-white rounded-lg shadow-md">
                     <h3 class="text-lg font-semibold mb-2">Paymate Link</h3>
                     <a href="{{ paymate_link }}" id="paymate-link" class="block mb-4 text-blue-600 hover:underline">{{ paymate_link }}</a>
@@ -24,22 +33,10 @@
                 </div>
             </div>
 
-            <!-- QR Code Section -->
-            <div class="mb-6">
+            <!-- Profile Details Section -->
+            <div id="profile-details" class="section-content mb-6 hidden">
                 <div class="p-4 bg-white rounded-lg shadow-md">
-                    <h3 class="text-lg font-semibold mb-2">QR Code</h3>
-                    <img src="{{ url_for('static', filename='qrcodes/' + user.username + '_paymate_qr.png') }}" alt="QR Code for Payment" id="qr-code" class="w-32 h-32 mx-auto mb-4">
-                    <div class="flex gap-4">
-                        <button class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none" onclick="downloadQRCode()">Download QR Code</button>
-                        <button class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none" onclick="shareQRCode()">Share QR Code</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Account Details Section -->
-            <div class="mb-6">
-                <div class="p-4 bg-white rounded-lg shadow-md">
-                    <h3 class="text-lg font-semibold mb-4">Account Details</h3>
+                    <h3 class="text-lg font-semibold mb-4">Profile Details</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <p class="text-sm font-medium text-gray-700">Account Number:</p>
@@ -55,24 +52,37 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-700">Balance:</p>
-                            <p class="text-lg">₹{{ bank.balance if bank.balance else '0.00' }}</p>
-                            
-
-
+                            <p class="text-lg">${{ bank.balance if bank.balance else '0.00' }}</p>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- QR Code Section -->
+            <div id="qr-code-section" class="section-content mb-6 hidden">
+                <div class="p-4 bg-white rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold mb-2">QR Code</h3>
+                    {% if qr_code %}
+                        <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code for Payment" id="qr-code" class="w-32 h-32 mx-auto mb-4">
+                        <div class="flex gap-4">
+                            <button class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none" onclick="downloadQRCode()">Download QR Code</button>
+                            <button class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none" onclick="shareQRCode()">Share QR Code</button>
+                        </div>
+                    {% else %}
+                        <p>No QR Code available.</p>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- Transaction History Section -->
-            <div class="mb-6">
+            <div id="transactions" class="section-content mb-6 hidden">
                 <div class="p-4 bg-white rounded-lg shadow-md">
                     <h3 class="text-lg font-semibold mb-4">Last 3 Transactions</h3>
                     <ul class="list-disc pl-5">
                         {% for transaction in transactions %}
                         <li class="mb-4">
                             <p><strong>Date:</strong> {{ transaction.transaction_date }}</p>
-                            <p><strong>Amount:</strong> ₹{{ transaction.amount }}</p>
+                            <p><strong>Amount:</strong> ${{ transaction.amount }}</p>
                             <p><strong>Status:</strong> {{ transaction.status }}</p>
                         </li>
                         {% endfor %}
@@ -81,16 +91,16 @@
             </div>
 
             <!-- KYC Form Section -->
-            <div>
+            <div id="kyc-form" class="section-content">
                 <div class="p-4 bg-white rounded-lg shadow-md">
                     <h3 class="text-lg font-semibold mb-4">Update Your KYC</h3>
                     <form action="{{ url_for('update_kyc') }}" method="POST" enctype="multipart/form-data">
                         <div class="mb-4">
-                            <label for="id_proof" class="block text-sm font-medium text-gray-700">Upload ID Proof</label>
+                            <label for="id_proof" class="block text-sm font-medium text-gray-700">Upload Driver's License</label>
                             <input type="file" id="id_proof" name="id_proof" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm" required>
                         </div>
                         <div class="mb-4">
-                            <label for="address_proof" class="block text-sm font-medium text-gray-700">Upload Address Proof</label>
+                            <label for="address_proof" class="block text-sm font-medium text-gray-700">Upload Address Proof (Passport)</label>
                             <input type="file" id="address_proof" name="address_proof" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm" required>
                         </div>
                         <button type="submit" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Submit KYC</button>
@@ -112,6 +122,22 @@
 
 {% block extra_scripts %}
 <script>
+    // Function to show the selected section and hide others
+    function showSection(sectionId) {
+        document.querySelectorAll('.section-content').forEach(section => {
+            if (section.id === sectionId) {
+                section.classList.remove('hidden');
+            } else {
+                section.classList.add('hidden');
+            }
+        });
+    }
+
+    // Initialize with Profile Details section visible
+    document.addEventListener('DOMContentLoaded', () => {
+        showSection('profile-details');
+    });
+
     // Function to copy Paymate link to clipboard
     function copyLink() {
         const link = document.getElementById('paymate-link');

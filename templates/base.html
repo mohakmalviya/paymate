@@ -75,7 +75,7 @@
             
             <!-- Page Title (Center-aligned) -->
             <h1 class="absolute inset-0 flex items-center justify-center text-pm-beige font-semibold text-xl">
-                {{ page_title | default('Dashboard') }}
+                Welcome {{ user.username | default('User') }}, to your Dashboard
             </h1>
         
             <!-- Notifications and Avatar (Right-aligned) -->
@@ -136,12 +136,7 @@
 
             <!-- Main Content Area -->
             <main class="flex-1 overflow-x-hidden overflow-y-auto bg-pm-beige p-6">
-                <div class="bg-pm-blue rounded-lg shadow-lg p-6">
-                    <h2 class="text-xl font-semibold text-pm-beige mb-4">
-                        Welcome {{ user.username | default('User') }}, to your Dashboard
-                    </h2>
-                    <p class="text-pm-yellow">Let's upgrade transactions in the digital age</p>
-                </div>
+                
                 {% block content %}{% endblock %}
             </main>
         </div>

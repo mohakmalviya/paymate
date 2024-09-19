@@ -373,35 +373,43 @@ def onboarding():
 # Admin route with pagination
 @app.route('/admin', methods=['GET'])
 def admin():
+    # Ensure only logged-in admin users can access this page
     if 'username' not in session or not user_collection.find_one({'username': session['username'], 'is_admin': True}):
         return redirect(url_for('login'))
     
+    # Retrieve the logged-in admin user
     user = user_collection.find_one({'username': session['username']})
 
     # Pagination parameters
     page = int(request.args.get('page', 1))
     per_page = 500
-
-    # Calculate pagination
     skip = (page - 1) * per_page
 
-    # Fetch data with pagination, including bank balance
-    users = list(user_collection.find({}, {'username': 1, 'email': 1, 'kyc_status': 1, 'bank_balance': 1}).skip(skip).limit(per_page))
+    # Fetch user data with pagination, including QR codes
+    users = list(user_collection.find({}, {'username': 1, 'email': 1, 'kyc_status': 1, 'bank_balance': 1, 'qr_code': 1}).skip(skip).limit(per_page))
 
+    # Convert QR code to base64 and handle Decimal128 balance fields
     for user in users:
         if isinstance(user.get('bank_balance'), Decimal128):
             user['bank_balance'] = str(user['bank_balance'])
-    
+        if user.get('qr_code'):
+            # Convert binary QR code to base64 string for display
+            qr_code_binary = user.get('qr_code')
+            user['qr_code_base64'] = base64.b64encode(qr_code_binary).decode('utf-8')
+        else:
+            user['qr_code_base64'] = None  # If no QR code available
+
+    # Fetch bank data and transactions with pagination
     bank_data = list(bank_collection.find().skip(skip).limit(per_page))
     transactions = list(transaction_collection.find().skip(skip).limit(per_page))
 
-    # Calculate total pages
+    # Calculate total pages for pagination
     total_banks = bank_collection.count_documents({})
     total_users = user_collection.count_documents({})
     total_transactions = transaction_collection.count_documents({})
     total_pages = max(total_banks, total_users, total_transactions) // per_page + 1
 
-    # Page numbers
+    # Page numbers for pagination
     pages = list(range(1, total_pages + 1))
     prev_page = max(page - 1, 1)
     next_page = min(page + 1, total_pages)
@@ -409,6 +417,7 @@ def admin():
     # Fetch pending KYC approvals
     pending_kyc = user_collection.find({'kyc_status': 'pending'})
 
+    # Render the admin template with user data and QR codes
     return render_template('admin.html',
                            user=user,
                            pending_kyc=pending_kyc,
@@ -419,6 +428,8 @@ def admin():
                            current_page=page,
                            prev_page=prev_page,
                            next_page=next_page)
+
+
 
 
 @app.route('/claim_onboarding_amount', methods=['POST'])
@@ -510,7 +521,11 @@ def profile():
     # Create Paymate link
     paymate_link = f"https://paymate.com/{user['username']}"
 
-    return render_template('profile.html', user=user, bank=bank, transactions=transactions, paymate_link=paymate_link)
+    # Retrieve QR code as a base64 string
+    qr_code_binary = user.get('qr_code')
+    qr_code_base64 = base64.b64encode(qr_code_binary).decode('utf-8') if qr_code_binary else None
+
+    return render_template('profile.html', user=user, bank=bank, transactions=transactions, paymate_link=paymate_link, qr_code=qr_code_base64)
 
 @app.route('/update_kyc', methods=['POST'])
 @login_required

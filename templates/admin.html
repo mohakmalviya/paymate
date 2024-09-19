@@ -44,7 +44,12 @@
                             <td class="px-4 py-2">{{ user['kyc_status'] }}</td>
                             <td class="px-4 py-2">${{ user.get('bank_balance', 'N/A') }}</td>
                             <td class="px-4 py-2">
-                                <button onclick="viewUserDetails('{{ user['_id'] }}')" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded">View</button>
+                                <!-- Check if the user has a QR code -->
+                                {% if user['qr_code_base64'] %}
+                                <button onclick="openQrCodeModal('{{ user['qr_code_base64'] }}')" class="bg-blue-500 hover:bg-black-700 text-white font-bold py-1 px-2 rounded">View QR Code</button>
+                                {% else %}
+                                No QR Code
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
@@ -52,6 +57,24 @@
                 </table>
             </div>
         </div>
+
+        <!-- QR Code Modal -->
+        <div id="qrCodeModal" class="fixed inset-0 flex items-center justify-center z-50 hidden bg-gray-900 bg-opacity-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold">QR Code</h2>
+                <button onclick="closeQrCodeModal()" class="text-gray-500 hover:text-gray-700">&times;</button>
+            </div>
+            <div class="mt-4">
+                <img id="qrCodeImage" src="" alt="QR Code" class="mx-auto">
+            </div>
+            <div class="mt-4 text-center">
+                <button onclick="closeQrCodeModal()" class="bg-blue-500 text-white font-bold py-2 px-4 rounded">Close</button>
+            </div>
+            </div>
+        </div>
+
+
 
         <div id="bankTab" class="tab-content p-6 hidden">
             <h2 class="text-2xl font-semibold mb-4 text-gray-700">Bank Data</h2>
@@ -189,7 +212,20 @@
         // Implement user details view functionality
         console.log('Viewing user details for ID:', userId);
     }
-
+    
+    function openQrCodeModal(qrCodeBase64) {
+        // Set the src of the image to the QR code base64 string
+        document.getElementById('qrCodeImage').src = 'data:image/png;base64,' + qrCodeBase64;
+            
+        // Display the modal
+        document.getElementById('qrCodeModal').classList.remove('hidden');
+    }
+    
+    function closeQrCodeModal() {
+        // Hide the modal
+        document.getElementById('qrCodeModal').classList.add('hidden');
+    }
+    
     function approveKYC(userId) {
         // Implement KYC approval functionality
         console.log('Approving KYC for user ID:', userId);

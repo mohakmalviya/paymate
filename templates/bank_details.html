@@ -1,74 +1,86 @@
 {% extends "base.html" %}
 
+{% block head %}
+{{ super() }}
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    .tab-button { transition: all 0.3s; }
+    .tab-button:hover { background-color: #3b82f6; color: white; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="flex flex-col h-full">
-    <!-- Header Section -->
-    <header class="bg-pm-blue text-white p-4">
-        <h1 class="text-2xl font-bold">Bank Details</h1>
-    </header>
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold mb-8 text-pm-blue">Bank Details</h1>
 
-    <!-- Main Content -->
-    <main class="flex-1 p-6">
-        <div class="bg-white p-8 rounded-lg shadow-md">
-            <h2 class="text-xl font-semibold mb-6">Account Overview</h2>
-
-            <!-- Username and Bank Account Details -->
-            <div class="mb-6">
-                <!-- Username Section -->
-                <div class="p-4 bg-white rounded-lg shadow-md mb-4">
-                    <h3 class="text-lg font-semibold mb-2">Username</h3>
-                    <p class="text-lg">{{ user.username }}</p>
-                    <button id="edit-username" class="mt-2 bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Edit</button>
-                </div>
-
-                <!-- Bank Account Details Section -->
-                <div class="p-4 bg-white rounded-lg shadow-md">
-                    <h3 class="text-lg font-semibold mb-2">Bank Account Details</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <p class="text-sm font-medium text-gray-700">Account Number:</p>
-                            <p class="text-lg" id="account-number">{{ bank.account_number }}</p>
-                            <button id="edit-account-number" class="mt-2 bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Edit</button>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-700">Bank Name:</p>
-                            <p class="text-lg" id="bank-name">{{ bank.bank_name }}</p>
-                            <button id="edit-bank-name" class="mt-2 bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Edit</button>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-700">IFSC Code:</p>
-                            <p class="text-lg" id="ifsc-code">{{ bank.ifsc_code }}</p>
-                            <button id="edit-ifsc-code" class="mt-2 bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Edit</button>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-700">Balance:</p>
-                            <p class="text-lg" id="balance">${{ bank.balance if bank.balance else '0.00' }}</p>
-                            <button id="edit-balance" class="mt-2 bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Edit</button>
-                        </div>
-                    </div>
-                </div>
+    <!-- Toggle Buttons for Sections -->
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+        <div class="p-6 bg-white rounded-lg shadow-md">
+            <div class="flex border-b">
+                <button onclick="toggleSection('usernameSection')" class="tab-button px-6 py-3 font-semibold text-gray-700 focus:outline-none">Username</button>
+                <button onclick="toggleSection('bankDetailsSection')" class="tab-button px-6 py-3 font-semibold text-gray-700 focus:outline-none">Bank Account Details</button>
+                <button onclick="toggleSection('transactionsSection')" class="tab-button px-6 py-3 font-semibold text-gray-700 focus:outline-none">Last 10 Transactions</button>
             </div>
+        </div>
+    </div>
 
-            <!-- Last 10 Transactions -->
-            <div class="mb-6">
-                <div class="p-4 bg-white rounded-lg shadow-md">
-                    <h3 class="text-lg font-semibold mb-4">Last 10 Transactions</h3>
-                    <ul class="list-disc pl-5 mb-4">
-                        {% for transaction in transactions %}
-                        <li class="mb-4">
-                            <p><strong>Date:</strong> {{ transaction.transaction_date }}</p>
-                            <p><strong>Amount:</strong> ${{ transaction.amount }}</p>
-                            <p><strong>Status:</strong> {{ transaction.status }}</p>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    <button id="download-csv" class="bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">
-                        Download Transactions as CSV
-                    </button>
+    <!-- Username Section -->
+    <div id="usernameSection" class="section-content">
+        <div class="p-6 bg-white rounded-lg shadow-md mb-6">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Username</h2>
+            <div class="p-4 bg-white rounded-lg shadow-md">
+                <p class="text-lg">{{ user.username }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bank Account Details Section -->
+    <div id="bankDetailsSection" class="section-content hidden">
+        <div class="p-6 bg-white rounded-lg shadow-md mb-6">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Bank Account Details</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <p class="text-sm font-medium text-gray-700">Account Number:</p>
+                    <p class="text-lg" id="account-number">{{ bank.account_number }}</p>
+                    <button id="edit-account-number" class="mt-2 bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Edit</button>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-700">Bank Name:</p>
+                    <p class="text-lg" id="bank-name">{{ bank.bank_name }}</p>
+                    <button id="edit-bank-name" class="mt-2 bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Edit</button>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-700">IFSC Code:</p>
+                    <p class="text-lg" id="ifsc-code">{{ bank.ifsc_code }}</p>
+                    <button id="edit-ifsc-code" class="mt-2 bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Edit</button>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-700">Balance:</p>
+                    <p class="text-lg" id="balance">${{ bank.balance if bank.balance else '0.00' }}</p>
+                    <button id="edit-balance" class="mt-2 bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Edit</button>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
+
+    <!-- Last 10 Transactions Section -->
+    <div id="transactionsSection" class="section-content hidden">
+        <div class="p-6 bg-white rounded-lg shadow-md mb-6">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-700">Last 10 Transactions</h2>
+            <ul class="list-disc pl-5 mb-4">
+                {% for transaction in transactions %}
+                <li class="mb-4">
+                    <p><strong>Date:</strong> {{ transaction.transaction_date }}</p>
+                    <p><strong>Amount:</strong> ${{ transaction.amount }}</p>
+                    <p><strong>Status:</strong> {{ transaction.status }}</p>
+                </li>
+                {% endfor %}
+            </ul>
+            <button id="download-csv" class="bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">
+                Download Transactions as CSV
+            </button>
+        </div>
+    </div>
 </div>
 
 <!-- Edit Forms (Hidden by default) -->
@@ -116,6 +128,20 @@
 
 {% block extra_scripts %}
 <script>
+    // Function to handle showing and hiding sections
+    function toggleSection(sectionId) {
+        const sections = document.querySelectorAll('.section-content');
+        sections.forEach(section => {
+            section.classList.add('hidden');
+        });
+        document.getElementById(sectionId).classList.remove('hidden');
+    }
+
+    // Initialize the page with the "Username" section visible by default
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleSection('usernameSection');
+    });
+
     // Function to handle showing and hiding edit forms
     function showEditForm(formId) {
         document.getElementById('edit-forms').classList.remove('hidden');
@@ -143,7 +169,7 @@
 
     document.getElementById('edit-balance').addEventListener('click', function() {
         showEditForm('edit-bank-details-form');
-        document.getElementById('new-balance').value = document.getElementById('balance').innerText.replace('₹', '').trim();
+        document.getElementById('new-balance').value = document.getElementById('balance').innerText.replace('$', '').trim();
     });
 
     document.getElementById('close-edit-username').addEventListener('click', function() {
