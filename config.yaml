@@ -1,0 +1,7 @@
+device_detection:
+  enabled: true
+  platforms_allowed: 
+    - mobile
+    - tablet
+  platforms_disallowed:
+    - desktop

@@ -35,7 +35,7 @@ import tensorflow as tf
 tf.get_logger().setLevel('ERROR')
 import logging
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
-
+import yaml
 
 
 
@@ -595,6 +595,23 @@ def generate():
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
     cap.release()
+
+#Yaml config loader
+import yaml
+
+def load_config():
+    with open('config.yaml', 'r') as file:
+        config = yaml.safe_load(file)
+    return config
+
+config = load_config()
+
+# Example of how you might use the config for device checks:
+def is_mobile_device(user_agent):
+    if config['device_detection']['enabled']:
+        allowed_platforms = config['device_detection']['platforms_allowed']
+        return any(platform in user_agent.lower() for platform in ['mobi', 'android', 'iphone', 'ipad'])
+    return False
 
 @app.route('/scan_qr')
 def scan_qr():

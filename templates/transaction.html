@@ -163,6 +163,19 @@
         startCamera();
     });
 
+    document.getElementById('scanQrCodeBtn').addEventListener('click', function () {
+        fetch('/get-device-config')  // API to return config
+            .then(response => response.json())
+            .then(config => {
+                if (config.platforms_allowed.includes('mobile') && isMobileDevice()) {
+                    document.getElementById('scannerSection').classList.remove('hidden');
+                    startCamera();
+                } else {
+                    alert('QR Code scanning is only available on mobile devices.');
+                }
+            });
+    });
+
     function startCamera() {
         navigator.mediaDevices.getUserMedia({
             video: {
@@ -192,6 +205,21 @@
             console.error('Error accessing camera:', err);
         });
     }
+    
+    // Function to check if the user is on a mobile device
+    function isMobileDevice() {
+        return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    }
+
+    // Update the QR scan button event
+     document.getElementById('scanQrCodeBtn').addEventListener('click', function () {
+        if (isMobileDevice()) {
+            document.getElementById('scannerSection').classList.remove('hidden');
+            startCamera();
+        } else {
+            alert('QR Code scanning is only available on mobile devices.');
+        }
+    });
 
     function detectQrCode() {
         const video = document.getElementById('video');
