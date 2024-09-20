@@ -645,54 +645,86 @@ def process_transaction(user, recipient_username, amount, purpose):
                 'purpose': purpose,
                 'timestamp': datetime.utcnow()
             })
-            flash('Transaction successful!')
+
+            return True, "Transaction successful!"
         else:
-            flash('Recipient not found.')
+            return False, "Recipient not found."
     else:
-        flash('Insufficient balance.')
+        return False, "Insufficient balance."
 
 @app.route('/upload_qr_code', methods=['POST'])
 def upload_qr_code():
     if 'username' not in session:
-        return redirect(url_for('login'))
+        return jsonify({'error': 'User not logged in'}), 401
 
-    user = user_collection.find_one({'username': session['username']})
-    
     qr_code_image = request.files.get('qr_code_image')
-    amount = request.form.get('amount')
-    purpose = request.form.get('purpose')
-
+    
     if qr_code_image:
         # Read the image as binary and convert to a numpy array
         image_data = np.frombuffer(qr_code_image.read(), np.uint8)
         img = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
-        
+
         # Decode the QR code
-        decoded_text = decode_qr_code(img)
+        decoded_upi_id = decode_qr_code(img)
 
-        if decoded_text:
-            recipient_username = decoded_text
-            
-            # Save to uploads collection with expiration
-            expiration_time = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-            uploads_collection.insert_one({
-                'username': session['username'],
-                'qr_code_image': qr_code_image.read(),
-                'amount': amount,
-                'purpose': purpose,
-                'uploaded_at': datetime.datetime.utcnow(),
-                'expires_at': expiration_time
-            })
+        if decoded_upi_id:
+            # Query MongoDB users collection to check if UPI ID exists
+            recipient_user = user_collection.find_one({'upi_id': decoded_upi_id})
 
-            # Process the transaction (optional, based on your flow)
-            process_transaction(user, recipient_username, amount, purpose)
-            flash('Transaction successful!')
+            if recipient_user:
+                # Provide recipient details and prompt user to enter amount/purpose
+                return jsonify({
+                    'success': True,
+                    'decoded_text': decoded_upi_id,
+                    'first_name': recipient_user.get('first_name'),
+                    'last_name': recipient_user.get('last_name'),
+                    'upi_id': decoded_upi_id
+                })
+            else:
+                return jsonify({'success': False, 'error_message': 'No user found with this UPI ID.'})
 
-            return render_template('transaction.html', decoded_text=recipient_username, transaction_success=True)
         else:
-            return render_template('transaction.html', error_message="QR code not detected.")
+            return jsonify({'success': False, 'error_message': 'QR code not detected.'})
 
-    return redirect(url_for('transaction'))
+    return jsonify({'success': False, 'error_message': 'No QR code image provided.'}), 400
+
+@app.route('/process_transaction', methods=['POST'])
+def process_qr_transaction():
+    if 'username' not in session:
+        return jsonify({'error': 'User not logged in'}), 401
+
+    user = user_collection.find_one({'username': session['username']})
+
+    amount = request.form.get('amount')
+    purpose = request.form.get('purpose')
+    recipient_upi_id = request.form.get('upi_id')
+
+    # Ensure valid input
+    if not amount or not purpose or not recipient_upi_id:
+        return jsonify({'success': False, 'error_message': 'Please enter a valid amount, purpose, and UPI ID.'})
+
+    try:
+        amount = float(amount)
+        if amount <= 0:
+            raise ValueError()
+    except ValueError:
+        return jsonify({'success': False, 'error_message': 'Invalid amount entered.'})
+
+    # Find recipient user by UPI ID
+    recipient_user = user_collection.find_one({'upi_id': recipient_upi_id})
+
+    if recipient_user:
+        # Call the process_transaction function
+        recipient_username = recipient_user['username']
+        success, message = process_transaction(user, recipient_username, amount, purpose)
+
+        if success:
+            return jsonify({'success': True, 'message': message})
+        else:
+            return jsonify({'success': False, 'error_message': message})
+
+    return jsonify({'success': False, 'error_message': 'Recipient not found.'})
+
 
 def decode_qr_code(image):
     # Create a QRCodeDetector object
