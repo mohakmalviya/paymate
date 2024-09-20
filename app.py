@@ -741,50 +741,63 @@ def decode_qr_code(image):
 def delete_temp_file(file_id):
     uploads_collection.delete_one({'_id': file_id})
 
-@app.route('/scan_qr_code', methods=['GET', 'POST'])
-@login_required
+# Simulating a get_current_user function
+def get_current_user():
+    return {"username": "current_user"}  # Replace with actual logic
+
+# Simulating process_transaction function
+def process_transaction(user, recipient, amount, purpose):
+    # Add logic to handle the transaction
+    print(f"Processing transaction: From {user['username']} to {recipient}, Amount: {amount}, Purpose: {purpose}")
+
+# Scan QR code using OpenCV and pyzbar
 def scan_qr_code():
-    if request.method == 'POST':
-        recipient_username = request.form.get('recipient_username')
-        amount = request.form.get('amount')
-        purpose = request.form.get('purpose')
+    cap = cv2.VideoCapture(0)
+    detected = False
+    qr_data = None
 
-        user = get_current_user()
-        if user and recipient_username and amount and purpose:
-            process_transaction(user, recipient_username, amount, purpose)
-            flash('Transaction successful!')
-            return redirect(url_for('transaction'))
-        else:
-            flash('Invalid transaction details.')
-            return redirect(url_for('transaction'))
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("Failed to grab frame")
+            break
 
-    return render_template('transaction.html')
+        barcodes = pyzbar.decode(frame)
+        for barcode in barcodes:
+            if not detected:
+                detected = True
+                qr_data = barcode.data.decode('utf-8')
+                print(f"Type: {barcode.type}, Data: {qr_data}")
+                break  # Exit the loop after first detection
 
-@app.route('/capture_qr', methods=['GET'])
-def capture_qr():
-    def generate():
-        cap = cv2.VideoCapture(0)
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            
-            barcodes = pyzbar.decode(frame)
-            for barcode in barcodes:
-                barcode_data = barcode.data.decode('utf-8')
-                cap.release()
-                yield f"data: {barcode_data}\n\n"
-                return
+        if detected:
+            break  # Exit the while loop if QR code is detected
 
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        cv2.imshow('QR Code Scanner', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-        cap.release()
+    cap.release()
+    cv2.destroyAllWindows()
 
-    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return qr_data
 
+# Route to scan and display QR code
+@app.route('/scan_qr', methods=['GET'])
+@login_required
+def scan_qr():
+    # Call the QR scanning logic
+    qr_code_data = scan_qr_code()
+
+    if qr_code_data:
+        # Store the decoded QR data in the session
+        session['qr_code_data'] = qr_code_data
+        flash(f"QR Code detected! Data: {qr_code_data}")
+        return redirect(url_for('transaction'))  # Redirect to transaction page
+    else:
+        flash('No QR code detected. Try again!')
+        return redirect(url_for('transaction'))
+    
 @app.route('/bank-details')
 @login_required  # Ensure user is logged in
 def bank_details():

@@ -3,6 +3,7 @@
 {% block head %}
 {{ super() }}
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 <style>
     body {
         background-color: #f8fafc; /* Light background color */
@@ -166,27 +167,26 @@
 
                 <!-- QR Code Scanner -->
                 <div id="qrScanner" class="hidden mb-4">
-                    <iframe id="qrScannerIframe" src="data:text/html;charset=utf-8,{{ qr_scanner_html }}" width="640" height="480" frameborder="0"></iframe>
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">Scan QR Code</h3>
+                    <video id="qrVideo" width="640" height="480" class="border border-gray-300 rounded-md"></video>
+                    <canvas id="qrCanvas" class="hidden"></canvas> <!-- Used to capture video frames for scanning -->
                     <button id="stopScanBtn" class="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 focus:outline-none">Stop Scanning</button>
                 </div>
+                <div id="qrCodeResult" class="hidden mt-4 p-4 bg-gray-100 rounded-lg">
+                    <p class="text-lg font-semibold text-gray-700">Decoded UPI ID: <span id="decodedText"></span></p>
+                    <div class="mb-4">
+                        <label for="amount" class="block text-sm font-medium text-gray-700">Amount</label>
+                        <input type="text" id="amount" name="amount" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="purpose" class="block text-sm font-medium text-gray-700">Purpose</label>
+                        <input type="text" id="purpose" name="purpose" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                    </div>
+                    <button id="proceedBtn" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Proceed with Transaction</button>
+                </div>                
             </div>
         </div>
     </div>
-    {% if decoded_text %}
-    <!-- Modal for successful QR detection -->
-    <div class="modal" id="successModal">
-        <div class="modal-content">
-            <span id="closeModal" class="close">&times;</span>
-            <h2 class="text-2xl font-bold mb-4">QR Code Detected</h2>
-            <p>Recipient Username: {{ decoded_text }}</p>
-            <button class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Proceed</button>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if error_message %}
-        <div class="alert alert-danger">{{ error_message }}</div>
-    {% endif %}
 </div>
 <script>
     // Handle navigation buttons for payment options
@@ -269,31 +269,23 @@
             console.error("Error processing transaction:", err);
         });
     });
-
-    // Show the QR scanner
+    
+    // Scan QR Code
     document.getElementById('scanQrBtn').addEventListener('click', function () {
-        document.getElementById('qrScanner').classList.remove('hidden');
-        document.getElementById('uploadQrForm').classList.add('hidden');
+        fetch('/scan_qr')
+            .then(response => response.json())
+            .then(data => {
+                if (data.decoded_text) {
+                    document.getElementById('decodedText').textContent = data.decoded_text;
+                    document.getElementById('upiId').value = data.decoded_text; // Set the UPI ID in a hidden field
+                    document.getElementById('qrCodeResult').classList.remove('hidden'); // Show results
+                } else {
+                    alert(data.error || 'No QR code detected');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
     });
-
-    document.getElementById('stopScanBtn').addEventListener('click', function () {
-        stopCamera();
-    });
-
-    {% if decoded_text %}
-        document.getElementById('successModal').style.display = 'block';
-    {% endif %}
-
-    // Close modal logic
-    document.getElementById('closeModal').addEventListener('click', function () {
-        document.getElementById('successModal').style.display = 'none';
-    });
-
-    window.onclick = function(event) {
-        const modal = document.getElementById('successModal');
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
-    };
 </script>
 {% endblock %}
