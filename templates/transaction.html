@@ -76,7 +76,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <button id="sendLinkBtn" class="tab-button bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send Using Payment Link</button>
                 <button id="sendUpiBtn" class="tab-button bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send Using UPI ID</button>
-                <button id="sendQrBtn" class="tab-button bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Scan QR Code</button>
+                <button id="sendQrBtn" class="tab-button bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">QR Code Options</button>
             </div>
 
             <!-- Payment Link Form (Updated with static placeholder) -->
@@ -122,46 +122,94 @@
                 </form>
             </div>
 
-            <!-- QR Code Scanner Section -->
-            <div id="qrCodeScanner" class="hidden mb-4">
-                <iframe id="qrScannerIframe" src="data:text/html;charset=utf-8,{{ qr_scanner_html }}" width="640" height="480" frameborder="0"></iframe>
-                <button id="stopScanBtn" class="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 focus:outline-none">Stop Scanning</button>
+            <!-- QR Code Options Section -->
+            <div id="qrCodeOptions" class="hidden mb-4">
+                <h3 class="text-xl font-semibold mb-4 text-gray-700">QR Code Options</h3>
+                <button id="uploadQrBtn" class="bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none mb-4">Upload QR Code</button>
+                <button id="scanQrBtn" class="bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Scan QR Code</button>
+
+                <!-- Upload QR Code Form -->
+                <div id="uploadQrForm" class="hidden mb-4">
+                    <form method="POST" action="{{ url_for('upload_qr_code') }}" enctype="multipart/form-data">
+                        <div class="mb-4">
+                            <label for="qrFile" class="block text-sm font-medium text-gray-700">Upload File</label>
+                            <input type="file" id="qrFile" name="qr_file" accept="image/*" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                        </div>
+                        <button type="submit" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Detect UPI ID</button>
+                    </form>
+                </div>
+
+                <!-- QR Code Scanner -->
+                <div id="qrScanner" class="hidden mb-4">
+                    <iframe id="qrScannerIframe" src="data:text/html;charset=utf-8,{{ qr_scanner_html }}" width="640" height="480" frameborder="0"></iframe>
+                    <button id="stopScanBtn" class="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 focus:outline-none">Stop Scanning</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
+    {% if decoded_text %}
+    <!-- Modal for successful QR detection -->
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <span id="closeModal" class="close">&times;</span>
+            <h2 class="text-2xl font-bold mb-4">QR Code Detected</h2>
+            <p>Recipient Username: {{ decoded_text }}</p>
+            <button class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Proceed</button>
+        </div>
+    </div>
+    {% endif %}
 
+    {% if error_message %}
+        <div class="alert alert-danger">{{ error_message }}</div>
+    {% endif %}
+</div>
 <script>
     // Handle navigation buttons for payment options
     document.getElementById('sendLinkBtn').addEventListener('click', function () {
         document.getElementById('paymentLinkForm').classList.remove('hidden');
         document.getElementById('upiIdForm').classList.add('hidden');
-        document.getElementById('qrCodeScanner').classList.add('hidden');
+        document.getElementById('qrCodeOptions').classList.add('hidden');
     });
 
     document.getElementById('sendUpiBtn').addEventListener('click', function () {
         document.getElementById('upiIdForm').classList.remove('hidden');
         document.getElementById('paymentLinkForm').classList.add('hidden');
-        document.getElementById('qrCodeScanner').classList.add('hidden');
+        document.getElementById('qrCodeOptions').classList.add('hidden');
     });
 
     document.getElementById('sendQrBtn').addEventListener('click', function () {
-        document.getElementById('qrCodeScanner').classList.remove('hidden');
+        document.getElementById('qrCodeOptions').classList.remove('hidden');
         document.getElementById('paymentLinkForm').classList.add('hidden');
         document.getElementById('upiIdForm').classList.add('hidden');
+    });
+
+    // Show the upload QR form
+    document.getElementById('uploadQrBtn').addEventListener('click', function () {
+        document.getElementById('uploadQrForm').classList.remove('hidden');
+        document.getElementById('qrScanner').classList.add('hidden');
+    });
+
+    // Show the QR scanner
+    document.getElementById('scanQrBtn').addEventListener('click', function () {
+        document.getElementById('qrScanner').classList.remove('hidden');
+        document.getElementById('uploadQrForm').classList.add('hidden');
     });
 
     document.getElementById('stopScanBtn').addEventListener('click', function () {
         stopCamera();
     });
 
+    {% if decoded_text %}
+        document.getElementById('successModal').style.display = 'block';
+    {% endif %}
+
     // Close modal logic
     document.getElementById('closeModal').addEventListener('click', function () {
-        document.getElementById('confirmModal').style.display = 'none';
+        document.getElementById('successModal').style.display = 'none';
     });
 
     window.onclick = function(event) {
-        const modal = document.getElementById('confirmModal');
+        const modal = document.getElementById('successModal');
         if (event.target === modal) {
             modal.style.display = 'none';
         }

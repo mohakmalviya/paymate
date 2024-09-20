@@ -663,32 +663,48 @@ def upload_qr_code():
     purpose = request.form.get('purpose')
 
     if qr_code_image:
-        # Read the image as binary
-        binary_data = qr_code_image.read()
-        
-        # Save to uploads collection with expiration
-        expiration_time = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-        uploads_collection.insert_one({
-            'username': session['username'],
-            'qr_code_image': binary_data,
-            'amount': amount,
-            'purpose': purpose,
-            'uploaded_at': datetime.datetime.utcnow(),
-            'expires_at': expiration_time
-        })
+        # Read the image as binary and convert to a numpy array
+        image_data = np.frombuffer(qr_code_image.read(), np.uint8)
+        img = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
         
         # Decode the QR code
-        recipient_username = pyzbar(binary_data)
-        
-        if recipient_username:
-            # Process the transaction as before
+        decoded_text = decode_qr_code(img)
+
+        if decoded_text:
+            recipient_username = decoded_text
+            
+            # Save to uploads collection with expiration
+            expiration_time = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+            uploads_collection.insert_one({
+                'username': session['username'],
+                'qr_code_image': qr_code_image.read(),
+                'amount': amount,
+                'purpose': purpose,
+                'uploaded_at': datetime.datetime.utcnow(),
+                'expires_at': expiration_time
+            })
+
+            # Process the transaction (optional, based on your flow)
             process_transaction(user, recipient_username, amount, purpose)
             flash('Transaction successful!')
-            return redirect(url_for('dashboard'))
+
+            return render_template('transaction.html', decoded_text=recipient_username, transaction_success=True)
         else:
-            flash('No QR code found or user not recognized.')
+            return render_template('transaction.html', error_message="QR code not detected.")
 
     return redirect(url_for('transaction'))
+
+def decode_qr_code(image):
+    # Create a QRCodeDetector object
+    detector = cv2.QRCodeDetector()
+    
+    # Detect and decode the QR code
+    data, bbox, _ = detector.detectAndDecode(image)
+
+    if data:
+        return data
+    else:
+        return None
 
 def delete_temp_file(file_id):
     uploads_collection.delete_one({'_id': file_id})
