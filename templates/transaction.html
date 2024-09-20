@@ -3,14 +3,58 @@
 {% block head %}
 {{ super() }}
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script async src="https://docs.opencv.org/4.x/opencv.js"></script>
 <style>
-    .tab-button { transition: all 0.3s; }
-    .tab-button:hover { background-color: #3b82f6; color: white; }
-    #video { width: 320px; height: 240px; }
-    #canvas { display: none; }
-    .hidden { display: none; }
+    body {
+        background-color: #f8fafc; /* Light background color */
+    }
+    .tab-button {
+        transition: all 0.3s;
+    }
+    .tab-button:hover {
+        background-color: #3b82f6; /* Hover color */
+        color: white;
+    }
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+    .modal-content {
+        background-color: #fff;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 500px;
+        border-radius: 8px;
+    }
+    .hidden {
+        display: none;
+    }
+    .bg-pm-yellow {
+        background-color: #facc15; /* Custom yellow */
+    }
+    .bg-pm-orange {
+        background-color: #fb923c; /* Custom orange */
+    }
+    .text-pm-blue {
+        color: #1e3a8a; /* Custom blue */
+    }
+    .text-green-600 {
+        color: #16a34a; /* Green color for balance */
+    }
+    .rounded-md {
+        border-radius: 0.375rem;
+    }
+    .focus\:outline-none:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+    }
 </style>
 {% endblock %}
 
@@ -19,42 +63,42 @@
     <h1 class="text-4xl font-bold mb-8 text-pm-blue">Transactions</h1>
 
     <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-        <!-- Bank Balance Section -->
         <div class="p-6 bg-white rounded-lg shadow-md">
             <h2 class="text-2xl font-semibold mb-4 text-gray-700">Bank Balance</h2>
-            <p class="text-xl font-bold">${{ bank_balance }}</p>
+            <p class="text-3xl font-bold text-green-600">${{ bank_balance }}</p>
         </div>
     </div>
 
-    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
-        <!-- Toggle Buttons for Send Money and Receive Money -->
-        <div class="flex border-b">
-            <button onclick="changeTab('sendMoneyTab')" class="tab-button px-6 py-3 font-semibold text-gray-700 focus:outline-none">Send Money</button>
-            <button onclick="changeTab('receiveMoneyTab')" class="tab-button px-6 py-3 font-semibold text-gray-700 focus:outline-none">Receive Money</button>
-        </div>
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+        <div class="p-6">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-700">Send Money</h2>
 
-        <!-- Send Money Section -->
-        <div id="sendMoneyTab" class="tab-content p-6 hidden">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Send Money</h2>
-            <div class="flex gap-4 mb-6">
-                <button id="sendLinkBtn" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send Using Payment Link</button>
-                <button id="sendUpiBtn" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send Using UPI ID</button>
-                <button id="sendQrBtn" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send Using QR Code</button>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <button id="sendLinkBtn" class="tab-button bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send Using Payment Link</button>
+                <button id="sendUpiBtn" class="tab-button bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send Using UPI ID</button>
+                <button id="sendQrBtn" class="tab-button bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Scan QR Code</button>
             </div>
 
-            <!-- Payment Link Form -->
+            <!-- Payment Link Form (Updated with static placeholder) -->
             <div id="paymentLinkForm" class="hidden mb-4">
                 <form method="POST" action="{{ url_for('transaction') }}">
                     <input type="hidden" name="method" value="payment_link">
                     <div class="mb-4">
-                        <label for="paymentLink" class="block text-sm font-medium text-gray-700">Payment Link</label>
-                        <input type="text" id="paymentLink" name="recipient" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm">
+                        <label for="recipientUsername" class="block text-sm font-medium text-gray-700">Recipient Username</label>
+                        <div class="flex items-center">
+                            <span class="bg-gray-100 text-gray-500 px-3 py-2 border border-r-0 border-gray-300 rounded-l-md">https://www.paymate.com/</span>
+                            <input type="text" id="recipientUsername" name="recipient" class="flex-1 px-3 py-2 border border-l-0 border-gray-300 rounded-r-md focus:ring-blue-500 focus:border-blue-500" placeholder="username" required>
+                        </div>
                     </div>
                     <div class="mb-4">
-                        <label for="amountLink" class="block text-sm font-medium text-gray-700">Amount</label>
-                        <input type="number" id="amountLink" name="amount" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm">
+                        <label for="linkAmount" class="block text-sm font-medium text-gray-700">Amount</label>
+                        <input type="number" id="linkAmount" name="amount" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
                     </div>
-                    <button type="submit" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send Money</button>
+                    <div class="mb-4">
+                        <label for="linkPurpose" class="block text-sm font-medium text-gray-700">Purpose</label>
+                        <input type="text" id="linkPurpose" name="purpose" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Enter purpose of the transaction" required>
+                    </div>
+                    <button type="submit" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send via Payment Link</button>
                 </form>
             </div>
 
@@ -64,253 +108,63 @@
                     <input type="hidden" name="method" value="upi_id">
                     <div class="mb-4">
                         <label for="upiId" class="block text-sm font-medium text-gray-700">UPI ID</label>
-                        <input type="text" id="upiId" name="recipient" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm">
+                        <input type="text" id="upiId" name="recipient" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
                     </div>
                     <div class="mb-4">
-                        <label for="amountUpi" class="block text-sm font-medium text-gray-700">Amount</label>
-                        <input type="number" id="amountUpi" name="amount" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm">
+                        <label for="upiAmount" class="block text-sm font-medium text-gray-700">Amount</label>
+                        <input type="number" id="upiAmount" name="amount" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
                     </div>
-                    <button type="submit" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send Money</button>
+                    <div class="mb-4">
+                        <label for="upiPurpose" class="block text-sm font-medium text-gray-700">Purpose</label>
+                        <input type="text" id="upiPurpose" name="purpose" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Enter purpose of the transaction" required>
+                    </div>
+                    <button type="submit" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send via UPI</button>
                 </form>
-                <p class="p-4 text-pm-blue">* UPI - Unique Paymate Interface ID</p>
             </div>
 
             <!-- QR Code Scanner Section -->
             <div id="qrCodeScanner" class="hidden mb-4">
-                <button id="scanQrCodeBtn" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Scan QR Code</button>
-                <div id="scannerSection" class="hidden">
-                    <video id="video" width="320" height="240" autoplay></video>
-                    <canvas id="canvas" width="320" height="240"></canvas>
-                    <p id="qrCodeStatus" class="text-center mt-4">Scanning QR Code...</p>
-                </div>
-            </div>
-
-            <!-- QR Code Upload Form -->
-            <div id="uploadQrForm" class="hidden mb-4">
-                <form method="POST" action="{{ url_for('upload_qr') }}" enctype="multipart/form-data">
-                    <div class="mb-4">
-                        <label for="qr_code_image" class="block text-sm font-medium text-gray-700">Upload QR Code Image</label>
-                        <input type="file" id="qr_code_image" name="qr_code_image" accept="image/*" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm">
-                    </div>
-                    <button type="submit" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Upload QR Code</button>
-                </form>
-            </div>
-
-            <!-- QR Code Result Form -->
-            <div id="qrCodeResultForm" class="hidden mb-4">
-                <form method="POST" action="{{ url_for('transaction') }}">
-                    <input type="hidden" name="method" value="qr_code">
-                    <input type="hidden" id="scannedRecipient" name="recipient">
-                    <div class="mb-4">
-                        <label for="amountQrScan" class="block text-sm font-medium text-gray-700">Amount</label>
-                        <input type="number" id="amountQrScan" name="amount" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-pm-yellow focus:border-pm-yellow sm:text-sm">
-                    </div>
-                    <button type="submit" class="w-full bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Send Money</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Receive Money Section -->
-        <div id="receiveMoneyTab" class="tab-content p-6 hidden">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Receive Money</h2>
-            <div class="p-4 bg-white rounded-lg shadow-md">
-                <p class="mb-4">Share your QR code and PayMate Transaction ID for receiving payments.</p>
-                <div class="mb-4">
-                    {% if qr_code %}
-                        <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" id="receiverQrCode" class="w-32 h-32 mx-auto mb-4">
-                    {% else %}
-                        <p class="text-center text-sm font-medium">No QR Code available</p>
-                    {% endif %}
-                    <p class="text-center text-sm font-medium">UPI ID: <span id="receiverUpiId">{{ user.upi_id if user.upi_id else 'Not available' }}</span></p>
-                </div>
+                <iframe id="qrScannerIframe" src="data:text/html;charset=utf-8,{{ qr_scanner_html }}" width="640" height="480" frameborder="0"></iframe>
+                <button id="stopScanBtn" class="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 focus:outline-none">Stop Scanning</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    function changeTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
-        document.getElementById(tabId).classList.remove('hidden');
-    }
-
+    // Handle navigation buttons for payment options
     document.getElementById('sendLinkBtn').addEventListener('click', function () {
         document.getElementById('paymentLinkForm').classList.remove('hidden');
         document.getElementById('upiIdForm').classList.add('hidden');
         document.getElementById('qrCodeScanner').classList.add('hidden');
-        document.getElementById('uploadQrForm').classList.add('hidden');
-        document.getElementById('qrCodeResultForm').classList.add('hidden');
     });
 
     document.getElementById('sendUpiBtn').addEventListener('click', function () {
         document.getElementById('upiIdForm').classList.remove('hidden');
         document.getElementById('paymentLinkForm').classList.add('hidden');
         document.getElementById('qrCodeScanner').classList.add('hidden');
-        document.getElementById('uploadQrForm').classList.add('hidden');
-        document.getElementById('qrCodeResultForm').classList.add('hidden');
     });
 
     document.getElementById('sendQrBtn').addEventListener('click', function () {
         document.getElementById('qrCodeScanner').classList.remove('hidden');
-        document.getElementById('uploadQrForm').classList.remove('hidden');
         document.getElementById('paymentLinkForm').classList.add('hidden');
         document.getElementById('upiIdForm').classList.add('hidden');
-        document.getElementById('qrCodeResultForm').classList.add('hidden');
     });
 
-    document.getElementById('scanQrCodeBtn').addEventListener('click', function () {
-        document.getElementById('scannerSection').classList.remove('hidden');
-        startCamera();
+    document.getElementById('stopScanBtn').addEventListener('click', function () {
+        stopCamera();
     });
 
-    document.getElementById('scanQrCodeBtn').addEventListener('click', function () {
-        fetch('/get-device-config')  // API to return config
-            .then(response => response.json())
-            .then(config => {
-                if (config.platforms_allowed.includes('mobile') && isMobileDevice()) {
-                    document.getElementById('scannerSection').classList.remove('hidden');
-                    startCamera();
-                } else {
-                    alert('QR Code scanning is only available on mobile devices.');
-                }
-            });
+    // Close modal logic
+    document.getElementById('closeModal').addEventListener('click', function () {
+        document.getElementById('confirmModal').style.display = 'none';
     });
 
-    function startCamera() {
-        navigator.mediaDevices.getUserMedia({
-            video: {
-                facingMode: "environment",
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
-                frameRate: { ideal: 30 },
-                aspectRatio: 16 / 9
-            }
-        })
-        .then(stream => {
-            const video = document.getElementById('video');
-            video.srcObject = stream;
-            video.play();
-
-            const videoTracks = stream.getVideoTracks();
-            const width = videoTracks[0].getSettings().width;
-            const height = videoTracks[0].getSettings().height;
-
-            const canvas = document.getElementById('canvas');
-            canvas.width = width;
-            canvas.height = height;
-
-            detectQrCode();
-        })
-        .catch(err => {
-            console.error('Error accessing camera:', err);
-        });
-    }
-    
-    // Function to check if the user is on a mobile device
-    function isMobileDevice() {
-        return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-    }
-
-    // Update the QR scan button event
-     document.getElementById('scanQrCodeBtn').addEventListener('click', function () {
-        if (isMobileDevice()) {
-            document.getElementById('scannerSection').classList.remove('hidden');
-            startCamera();
-        } else {
-            alert('QR Code scanning is only available on mobile devices.');
+    window.onclick = function(event) {
+        const modal = document.getElementById('confirmModal');
+        if (event.target === modal) {
+            modal.style.display = 'none';
         }
-    });
-
-    function detectQrCode() {
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-
-        if (video.paused || video.ended) return;
-
-        // Flip the video horizontally to correct the inverted image
-        ctx.save();
-        ctx.scale(-1, 1);  // Inverts the canvas horizontally
-        ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);  // Draw video on canvas
-        ctx.restore();
-
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-        // Convert to grayscale and enhance image
-        const grayImageData = convertToGrayscale(imageData);
-        const enhancedImageData = enhanceImage(grayImageData);
-
-        // Use OpenCV to process the enhanced image
-        const srcMat = cv.matFromImageData(enhancedImageData);
-        const grayMat = new cv.Mat();
-
-        cv.cvtColor(srcMat, grayMat, cv.COLOR_RGBA2GRAY);
-
-        // Apply adaptive thresholding to improve QR code clarity
-        const adaptiveThreshMat = new cv.Mat();
-        cv.adaptiveThreshold(grayMat, adaptiveThreshMat, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 11, 2);
-
-        const qrCodeDetector = new cv.QRCodeDetector();
-        const points = new cv.Mat();
-        const qrCode = new cv.Mat();
-        const decodedText = qrCodeDetector.detectAndDecode(adaptiveThreshMat, points, qrCode);
-
-        if (decodedText) {
-            document.getElementById('scannedRecipient').value = decodedText;
-            document.getElementById('qrCodeScanner').classList.add('hidden');
-            document.getElementById('qrCodeResultForm').classList.remove('hidden');
-            const stream = video.srcObject;
-            if (stream) {
-                const tracks = stream.getTracks();
-                tracks.forEach(track => track.stop());
-            }
-        }
-
-        srcMat.delete();
-        grayMat.delete();
-        adaptiveThreshMat.delete();
-        points.delete();
-        qrCode.delete();
-
-        requestIdleCallback(detectQrCode);
-    }
-
-    // Function to convert image data to grayscale
-    function convertToGrayscale(imageData) {
-        const grayData = new Uint8ClampedArray(imageData.width * imageData.height * 4);
-        const data = imageData.data;
-        for (let i = 0; i < data.length; i += 4) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-            grayData[i] = gray;
-            grayData[i + 1] = gray;
-            grayData[i + 2] = gray;
-            grayData[i + 3] = data[i + 3]; // Keep the alpha channel unchanged
-        }
-        return new ImageData(grayData, imageData.width, imageData.height);
-    }
-
-    // Function to enhance the image (contrast, sharpness, etc.)
-    function enhanceImage(imageData) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = imageData.width;
-        canvas.height = imageData.height;
-
-        ctx.putImageData(imageData, 0, 0);
-
-        // Apply contrast, brightness, and sharpening filters
-        // Example: Increase contrast
-        ctx.filter = 'contrast(1.8) brightness(1.2)';
-
-        // Draw the enhanced image onto the canvas
-        ctx.drawImage(canvas, 0, 0);
-
-        // Get the enhanced image data
-        return ctx.getImageData(0, 0, canvas.width, canvas.height);
-    }
+    };
 </script>
-
 {% endblock %}
