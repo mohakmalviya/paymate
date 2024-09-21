@@ -83,7 +83,7 @@
             <!-- Payment Link Form (Updated with static placeholder) -->
             <div id="paymentLinkForm" class="hidden mb-4">
                 <form method="POST" action="{{ url_for('transaction') }}">
-                    <input type="hidden" name="method" value="payment_link">
+                    <input type="hidden" name="method" id="transactionMethod" value="payment_link">
                     <div class="mb-4">
                         <label for="recipientUsername" class="block text-sm font-medium text-gray-700">Recipient Username</label>
                         <div class="flex items-center">
@@ -106,7 +106,7 @@
             <!-- UPI ID Form -->
             <div id="upiIdForm" class="hidden mb-4">
                 <form method="POST" action="{{ url_for('transaction') }}">
-                    <input type="hidden" name="method" value="upi_id">
+                    <input type="hidden" name="method" id="transactionMethod" value="upi_id">
                     <div class="mb-4">
                         <label for="upiId" class="block text-sm font-medium text-gray-700">UPI ID</label>
                         <input type="text" id="upiId" name="recipient" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
@@ -124,6 +124,7 @@
             </div>
 
             <!-- QR Code Options Section -->
+            
             <div id="qrCodeOptions" class="hidden mb-4">
                 <h3 class="text-xl font-semibold mb-4 text-gray-700">QR Code Options</h3>
                 <button id="uploadQrBtn" class="bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none mb-4">Upload QR Code</button>
@@ -165,6 +166,9 @@
                     </form>
                 </div>
 
+                <button id="scanQrBtn" class="bg-pm-yellow text-white py-2 px-4 rounded-md hover:bg-pm-orange focus:outline-none">Start Scanning</button>
+
+
                 <!-- QR Code Scanner -->
                 <div id="qrScanner" class="hidden mb-4">
                     <h3 class="text-xl font-semibold mb-4 text-gray-700">Scan QR Code</h3>
@@ -191,29 +195,25 @@
 <script>
     // Handle navigation buttons for payment options
     document.getElementById('sendLinkBtn').addEventListener('click', function () {
+        document.getElementById('transactionMethod').value = 'payment_link';
         document.getElementById('paymentLinkForm').classList.remove('hidden');
         document.getElementById('upiIdForm').classList.add('hidden');
         document.getElementById('qrCodeOptions').classList.add('hidden');
     });
-
+    
     document.getElementById('sendUpiBtn').addEventListener('click', function () {
+        document.getElementById('transactionMethod').value = 'upi_id';
         document.getElementById('upiIdForm').classList.remove('hidden');
         document.getElementById('paymentLinkForm').classList.add('hidden');
         document.getElementById('qrCodeOptions').classList.add('hidden');
     });
-
+    
     document.getElementById('sendQrBtn').addEventListener('click', function () {
+        document.getElementById('transactionMethod').value = 'qr_code';
         document.getElementById('qrCodeOptions').classList.remove('hidden');
         document.getElementById('paymentLinkForm').classList.add('hidden');
         document.getElementById('upiIdForm').classList.add('hidden');
     });
-
-    // Show the upload QR form
-    document.getElementById('uploadQrBtn').addEventListener('click', function () {
-        document.getElementById('uploadQrForm').classList.remove('hidden');
-        document.getElementById('qrScanner').classList.add('hidden');
-    });
-    
     
     // Handle the QR Code upload and display user info for transaction
     document.getElementById('qrCodeForm').addEventListener('submit', function(e) {
@@ -272,20 +272,68 @@
     
     // Scan QR Code
     document.getElementById('scanQrBtn').addEventListener('click', function () {
+        // Show the QR scanner UI
+        document.getElementById('qrScanner').classList.remove('hidden');
+    
+        // Call the backend to start the scanning process
         fetch('/scan_qr')
             .then(response => response.json())
             .then(data => {
-                if (data.decoded_text) {
-                    document.getElementById('decodedText').textContent = data.decoded_text;
-                    document.getElementById('upiId').value = data.decoded_text; // Set the UPI ID in a hidden field
-                    document.getElementById('qrCodeResult').classList.remove('hidden'); // Show results
+                if (data.success) {
+                    // Display the decoded QR code data (e.g., 'soham1234@paymate')
+                    document.getElementById('decodedText').textContent = data.qr_code_data;
+                    document.getElementById('upiId').value = data.qr_code_data; // Set UPI ID in hidden input
+                    document.getElementById('qrCodeResult').classList.remove('hidden'); // Show the result
+                    document.getElementById('qrScanner').classList.add('hidden'); // Hide the scanner after detection
                 } else {
-                    alert(data.error || 'No QR code detected');
+                    alert('No QR code detected. Please try again.');
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Error during QR code scan:', error);
             });
     });
+    
+    // Stop scanning button logic (if needed)
+    document.getElementById('stopScanBtn').addEventListener('click', function () {
+        // You can implement logic to stop the scanner here, if needed
+        document.getElementById('qrScanner').classList.add('hidden');
+    });
+    
+    // Proceed with transaction
+    document.getElementById('proceedBtn').addEventListener('click', function () {
+        // Collect data and process the transaction
+        const amount = document.getElementById('amount').value;
+        const purpose = document.getElementById('purpose').value;
+        const upiId = document.getElementById('upiId').value;
+    
+        // Example: You can call a backend API to process the transaction
+        processTransaction(upiId, amount, purpose);
+    });
+    
+    function processTransaction(upiId, amount, purpose) {
+        fetch('/process_transaction', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'upi_id': upiId,
+                'amount': amount,
+                'purpose': purpose
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Transaction successful!');
+            } else {
+                alert('Transaction failed: ' + data.error_message);
+            }
+        })
+        .catch(error => {
+            console.error('Error processing transaction:', error);
+        });
+    }
 </script>
 {% endblock %}

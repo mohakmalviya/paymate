@@ -28,8 +28,6 @@ import numpy as np
 import cv2
 import warnings
 warnings.filterwarnings('ignore')
-import tensorflow as tf
-tf.get_logger().setLevel('ERROR')
 import logging
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
 import yaml
