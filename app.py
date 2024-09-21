@@ -748,10 +748,44 @@ def process_transaction(user, recipient, amount, purpose):
     # Add logic to handle the transaction
     print(f"Processing transaction: From {user['username']} to {recipient}, Amount: {amount}, Purpose: {purpose}")
 
+from flask import Response, stream_with_context
+
+camera = cv2.VideoCapture(0)
+
+def generate_frames():
+    while True:
+        # Read frames from the camera
+        success, frame = camera.read()
+        if not success:
+            break
+        else:
+            # Encode the frame in JPEG format
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame = buffer.tobytes()
+
+            # Use multipart format for streaming video
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+# Scan QR code using OpenCV and pyzbar
+@app.route('/scan_qr', methods=['GET'])
+@login_required
+def scan_qr():
+    # Call the QR scanning logic
+    qr_code_data = scan_qr_code()
+
+    if qr_code_data:
+        return jsonify({'success': True, 'qr_code_data': qr_code_data})
+    else:
+        return jsonify({'success': False, 'error_message': 'No QR code detected'})
+
 # Scan QR code using OpenCV and pyzbar
 def scan_qr_code():
     cap = cv2.VideoCapture(0)
-    detected = False
     qr_data = None
 
     while True:
@@ -762,39 +796,12 @@ def scan_qr_code():
 
         barcodes = pyzbar.decode(frame)
         for barcode in barcodes:
-            if not detected:
-                detected = True
-                qr_data = barcode.data.decode('utf-8')
-                print(f"Type: {barcode.type}, Data: {qr_data}")
-                break  # Exit the loop after first detection
-
-        if detected:
-            break  # Exit the while loop if QR code is detected
-
-        cv2.imshow('QR Code Scanner', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+            qr_data = barcode.data.decode('utf-8')
+            print(f"Type: {barcode.type}, Data: {qr_data}")
+            return qr_data  # Return the QR code data as soon as it is detected
 
     cap.release()
-    cv2.destroyAllWindows()
-
     return qr_data
-
-# Route to scan and display QR code
-@app.route('/scan_qr', methods=['GET'])
-@login_required
-def scan_qr():
-    # Call the QR scanning logic
-    qr_code_data = scan_qr_code()
-
-    if qr_code_data:
-        # Store the decoded QR data in the session
-        session['qr_code_data'] = qr_code_data
-        flash(f"QR Code detected! Data: {qr_code_data}")
-        return redirect(url_for('transaction'))  # Redirect to transaction page
-    else:
-        flash('No QR code detected. Try again!')
-        return redirect(url_for('transaction'))
     
 @app.route('/bank-details')
 @login_required  # Ensure user is logged in
